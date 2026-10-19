@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Fußball Imposter</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      touch-action: manipulation;
+    }
+    body {
+      background-color: #121212;
+      color: #eee;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+    }
+    .back-btn {
+      color: #00ffcc;
+      text-decoration: none;
+      font-size: 16px;
+      align-self: flex-start;
+      margin-bottom: 15px;
+    }
+    h1 {
+      color: #00bcd4;
+      font-size: 26px;
+      margin-top: 0;
+      text-align: center;
+    }
+    .card {
+      background: #1e1e1e;
+      border: 1px solid #333;
+      border-radius: 16px;
+      padding: 20px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+    label {
+      font-size: 14px;
+      color: #aaa;
+    }
+    input[type="number"], input[type="text"] {
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #444;
+      background: #2a2a2a;
+      color: white;
+      font-size: 16px;
+    }
+    .btn {
+      background: #28a745;
+      color: white;
+      border: none;
+      padding: 14px;
+      font-size: 16px;
+      font-weight: bold;
+      border-radius: 10px;
+      cursor: pointer;
+      width: 100%;
+      transition: background 0.2s;
+    }
+    .btn:active {
+      transform: scale(0.98);
+    }
+    .player-row {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      background: #282828;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid #444;
+    }
+    .player-btn {
+      background: #2e86de;
+      color: white;
+      border: none;
+      padding: 12px;
+      font-size: 16px;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .start-player-btn {
+      background: #28a745 !important;
+    }
+    .role-output {
+      background: #121212;
+      border: 1px solid #555;
+      padding: 10px;
+      border-radius: 6px;
+      font-size: 15px;
+      text-align: center;
+      min-height: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #00ffcc;
+    }
+    .start-info {
+      background: rgba(40, 167, 69, 0.2);
+      border: 1px solid #28a745;
+      color: #28a745;
+      padding: 12px;
+      border-radius: 8px;
+      text-align: center;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <a href="index.html" class="back-btn">← Zurück zum Menü</a>
+
+  <h1>⚽ Fußball Imposter</h1>
+
+  <div id="app" class="card">
+    <!-- Phasen werden dynamisch per JS eingefügt -->
+  </div>
+
+  <script>
+    // Vollständige Spielerliste aus deinem Code
+    const fussballspieler = [
+      "Lionel Messi", "Cristiano Ronaldo", "Kylian Mbappé", "Erling Haaland", "Kevin De Bruyne",
+      "Neymar", "Mohamed Salah", "Harry Kane", "Robert Lewandowski", "Vinícius Júnior",
+      "Karim Benzema", "Luka Modrić", "Jude Bellingham", "Pedri", "Gavi", "Antoine Griezmann",
+      "João Félix", "Federico Valverde", "Bukayo Saka", "Phil Foden", "Zinédine Zidane", 
+      "Diego Maradona", "Pelé", "Ronaldinho", "Ronaldo Nazário", "David Beckham", "Thierry Henry", 
+      "Andrea Pirlo", "Xavi", "Andrés Iniesta", "Francesco Totti", "Iker Casillas", "Gianluigi Buffon", 
+      "Paolo Maldini", "Kaká", "Fernando Torres", "Wayne Rooney", "Frank Lampard", "Steven Gerrard", 
+      "Arjen Robben", "Philipp Lahm", "Bastian Schweinsteiger", "Michael Ballack", "Didier Drogba", 
+      "Zlatan Ibrahimović", "Lothar Matthäus", "Thomas Müller", "Manuel Neuer", "Marco Reus", 
+      "Jamal Musiala", "Florian Wirtz", "Franck Ribéry", "Toni Kroos", "Sergio Ramos", "Gerard Piqué"
+    ];
+
+    const app = document.getElementById("app");
+
+    // Phase 1: Anzahl der Spieler wählen
+    function showCountStep() {
+      app.innerHTML = `
+        <label for="playerCount">Spieleranzahl (2 - 10):</label>
+        <input type="number" id="playerCount" value="3" min="2" max="10">
+        <button class="btn" onclick="submitCount()">Weiter 🎮</button>
+      `;
+    }
+
+    function submitCount() {
+      const count = parseInt(document.getElementById("playerCount").value) || 3;
+      showNamesStep(count);
+    }
+
+    // Phase 2: Namen der Spieler eingeben
+    function showNamesStep(count) {
+      let inputsHtml = "";
+      for (let i = 0; i < count; i++) {
+        inputsHtml += `
+          <div>
+            <label>Spieler ${i + 1}:</label>
+            <input type="text" class="name-input" placeholder="Spieler ${i + 1}">
+          </div>
+        `;
+      }
+
+      app.innerHTML = `
+        <h3>📝 Spielernamen</h3>
+        ${inputsHtml}
+        <button class="btn" onclick="submitNames()">Namen bestätigen ✅</button>
+      `;
+    }
+
+    function submitNames() {
+      const nameInputs = document.querySelectorAll(".name-input");
+      const namen = Array.from(nameInputs).map((input, idx) => input.value.trim() || `Spieler ${idx + 1}`);
+      startRound(namen);
+    }
+
+    // Phase 3: Rollenverteilung
+    function startRound(namen) {
+      const echterSpieler = fussballspieler[Math.floor(Math.random() * fussballspieler.length)];
+      const imposterIndex = Math.floor(Math.random() * namen.length);
+      const spielerStartIndex = Math.floor(Math.random() * namen.length);
+
+      let playersHtml = "";
+
+      namen.forEach((name, i) => {
+        const isStartPlayer = (i === spielerStartIndex);
+        const btnClass = isStartPlayer ? "player-btn start-player-btn" : "player-btn";
+        const role = (i === imposterIndex) ? "🕵️ Imposter" : `⚽ ${echterSpieler}`;
+
+        playersHtml += `
+          <div class="player-row">
+            <button class="${btnClass}" id="btn-${i}" onclick="handlePlayerClick(${i}, '${role}')">
+              ${name}
+            </button>
+            <div class="role-output" id="output-${i}">Tippe, um Rolle zu sehen</div>
+          </div>
+        `;
+      });
+
+      app.innerHTML = `
+        <div class="start-info">
+          🎉 Startspieler: <strong>${namen[spielerStartIndex]}</strong>
+        </div>
+        ${playersHtml}
+        <button class="btn" style="background:#555; margin-top:10px;" onclick="showCountStep()">Neue Runde 🔄</button>
+      `;
+    }
+
+    // Klick-Logik (1. Klick = Rolle sehen, 2. Klick = Verstecken & Button sperren)
+    const clickTracker = {};
+
+    function handlePlayerClick(index, role) {
+      if (!clickTracker[index]) clickTracker[index] = 0;
+      clickTracker[index]++;
+
+      const output = document.getElementById(`output-${index}`);
+      const btn = document.getElementById(`btn-${index}`);
+
+      if (clickTracker[index] === 1) {
+        output.innerHTML = `🎭 Deine Rolle:<br><strong>${role}</strong>`;
+      } else if (clickTracker[index] === 2) {
+        output.innerText = "✅ Gesichert";
+        btn.disabled = true;
+        btn.style.opacity = "0.5";
+      }
+    }
+
+    // Starten
+    showCountStep();
+  </script>
+</body>
+</html>
