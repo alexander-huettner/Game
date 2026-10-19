@@ -21,7 +21,7 @@
       -webkit-background-clip: text; -webkit-text-fill-color: transparent;
     }
     .back-btn { color: #888; text-decoration: none; font-size: 14px; display: inline-block; margin-bottom: 15px; }
-    
+
     /* Setup Box */
     .setup-box {
       background: #1e1e1e; border: 2px solid #00ffcc; border-radius: 16px; padding: 20px; text-align: center; margin-bottom: 20px;
@@ -49,7 +49,7 @@
       background: #121212; border-radius: 12px; padding: 10px; border: 1px solid #333;
     }
     .bid-info { font-size: 14px; color: #aaa; margin-bottom: 15px; }
-    
+
     /* Custom Input Controls */
     .manual-bid-box {
       display: flex; gap: 8px; justify-content: center; margin-bottom: 12px;
@@ -85,7 +85,7 @@
 
 <div class="container">
   <a href="index.html" class="back-btn">← Zurück zur Übersicht</a>
-  
+
   <header>
     <h1>⚽ Auktions-Draft</h1>
     <span id="round-counter" style="color: #888;">Setup</span>
@@ -112,7 +112,7 @@
     <div id="game-area" class="auction-box">
       <div>Aktueller Fußballer:</div>
       <div id="current-player" class="player-name">---</div>
-      
+
       <!-- Preis in der Mitte -->
       <div id="current-price" class="price-display">0.00 €</div>
       <div id="bid-info" class="bid-info">Noch keine Gebote</div>
@@ -149,27 +149,33 @@
 <script>
   let config = { numPlayers: 3, totalRounds: 15, targetSquadSize: 4 };
   let pool = [];
-  let players = []; 
+  let players = [];
 
   let state = {
     round: 1,
     currentPlayerName: "",
-    currentPrice: 0.0,
+    currentPrice: 0,
     highestBidderIndex: null,
     activeBidderIndex: 0,
     activeInRound: [],       // Wer bietet in dieser Runde noch mit?
-    firstPasserIndex: null   // Wer ist als ERSTES bei 0.00 € ausgestiegen?
+    firstPasserIndex: null   // Wer ist als ERSTES bei 0 € ausgestiegen?
   };
+
+  // Maximales Gebot: 1 € pro noch offenem Kaderplatz (außer dem aktuellen) bleibt reserviert
+  function maxBid(p) {
+    const needed = config.targetSquadSize - p.squad.length;
+    return p.budget - Math.max(0, needed - 1);
+  }
 
   function startGame() {
     config.numPlayers = parseInt(document.getElementById('num-players').value);
-    config.totalRounds = config.numPlayers * 5;
-    
+    config.totalRounds = config.numPlayers * 6;
+
     const namenEinfach = SPIELER_EINFACH.map(e => e[0]);
     const namenSchwer = SPIELER_SCHWER.map(e => e[0]);
     pool = [...namenEinfach, ...namenSchwer].sort(() => Math.random() - 0.5);
 
-    const startBudget = config.numPlayers * 10.0;
+    const startBudget = config.numPlayers * 10;
 
     players = [];
     for (let i = 0; i < config.numPlayers; i++) {
@@ -189,7 +195,6 @@
   }
 
   function initRound() {
-    // Prüfen, ob alle Spieler bereits 4 Spieler im Kader haben
     const allFull = players.every(p => p.squad.length >= config.targetSquadSize);
 
     if (state.round > config.totalRounds || pool.length === 0 || allFull) {
@@ -198,17 +203,19 @@
     }
 
     state.currentPlayerName = pool.pop();
-    state.currentPrice = 0.0;
+    state.currentPrice = 0;
     state.highestBidderIndex = null;
     state.firstPasserIndex = null;
 
-    // Nur Spieler aktivieren, die noch nicht 4 Spieler im Kader haben
+    // Nur Spieler aktivieren, die noch nicht voll sind
     state.activeInRound = players.map(p => p.squad.length < config.targetSquadSize);
 
-    // Starter-Rotation (finde den nächsten berechtigten Starter)
+    // Starter-Rotation (nächster berechtigter Starter)
     let startIdx = (state.round - 1) % config.numPlayers;
-    while (players[startIdx].squad.length >= config.targetSquadSize) {
+    let guard = 0;
+    while (players[startIdx].squad.length >= config.targetSquadSize && guard < config.numPlayers) {
       startIdx = (startIdx + 1) % config.numPlayers;
+      guard++;
     }
     state.activeBidderIndex = startIdx;
 
@@ -225,15 +232,19 @@
     document.getElementById('current-price').innerText = state.currentPrice.toFixed(2) + " €";
 
     const activeP = players[state.activeBidderIndex];
-    let bidText = state.highestBidderIndex !== null 
-      ? `Höchstgebot von ${players[state.highestBidderIndex].name}`
+    let bidText = state.highestBidderIndex !== null
+      ? `Höchstgebot von ${players[state.highestBidderIndex].name} | Am Zug: ${activeP.name}`
       : `Am Zug: ${activeP.name}`;
     document.getElementById('bid-info').innerText = bidText;
 
     // Dynamischer Button-Text
     const btnPass = document.getElementById('btn-pass');
     if (state.highestBidderIndex === null) {
-      btnPass.innerText = `Skippen / Aussteigen (${activeP.skipsLeft}x Skip)`;
+      if (state.firstPasserIndex === null) {
+        btnPass.innerText = `Skippen (${activeP.skipsLeft}x Skip)`;
+      } else {
+        btnPass.innerText = `Aussteigen`;
+      }
     } else {
       btnPass.innerText = `Aussteigen (Passen)`;
     }
@@ -254,13 +265,14 @@
 
   function validateControls() {
     const p = players[state.activeBidderIndex];
-    const nextBid = state.highestBidderIndex !== null ? state.currentPrice + 1.0 : 1.0;
+    const nextBid = state.highestBidderIndex !== null ? state.currentPrice + 1 : 1;
 
     const btnBid = document.getElementById('btn-bid');
     const btnCustomBid = document.getElementById('btn-custom-bid');
     const btnPass = document.getElementById('btn-pass');
+    const customInput = document.getElementById('custom-bid-input');
 
-    // KADER-LIMIT PRÜFUNG: Wenn bereits 4 Spieler im Kader sind -> gesperrt
+    // Kader voll -> alles gesperrt (sollte durch activeInRound nie vorkommen)
     if (p.squad.length >= config.targetSquadSize) {
       btnBid.disabled = true;
       btnCustomBid.disabled = true;
@@ -268,11 +280,10 @@
       return;
     }
 
-    // Bieten-Prüfung durch Budget
-    btnBid.disabled = p.budget < nextBid;
-    btnCustomBid.disabled = p.budget < nextBid;
-
-    const customInput = document.getElementById('custom-bid-input');
+    // Bieten nur, wenn nach dem Gebot noch genug Budget für die restlichen Plätze bleibt
+    const canBid = maxBid(p) >= nextBid;
+    btnBid.disabled = !canBid;
+    btnCustomBid.disabled = !canBid;
     customInput.min = Math.floor(nextBid);
 
     // Pflichtkauf-Prüfung
@@ -280,24 +291,25 @@
     const needed = config.targetSquadSize - p.squad.length;
     const mustBuy = needed >= remainingRounds;
 
-    // Skippen/Aussteigen Logik
     if (state.highestBidderIndex === null) {
-      // Wenn man als ERSTES bei 0.00 € skippen möchte, muss man noch einen Skip übrig haben
-      btnPass.disabled = p.skipsLeft <= 0 || mustBuy;
+      // Skip nur nötig, wenn man der ERSTE ist, der aussteigt
+      const needsSkip = state.firstPasserIndex === null;
+      btnPass.disabled = mustBuy || (needsSkip && p.skipsLeft <= 0);
     } else {
-      btnPass.disabled = mustBuy && state.highestBidderIndex !== state.activeBidderIndex;
+      // Pflichtkäufer darf nur passen, wenn er gar nicht mehr mitbieten kann
+      btnPass.disabled = mustBuy && canBid;
     }
   }
 
   function placeStepBid() {
-    const nextBid = state.highestBidderIndex !== null ? state.currentPrice + 1.0 : 1.0;
+    const nextBid = state.highestBidderIndex !== null ? state.currentPrice + 1 : 1;
     executeBid(nextBid);
   }
 
   function placeCustomBid() {
     const input = document.getElementById('custom-bid-input');
     const amount = parseInt(input.value, 10);
-    const minRequired = state.highestBidderIndex !== null ? state.currentPrice + 1.0 : 1.0;
+    const minRequired = state.highestBidderIndex !== null ? state.currentPrice + 1 : 1;
     const p = players[state.activeBidderIndex];
 
     if (isNaN(amount) || amount < minRequired) {
@@ -305,8 +317,8 @@
       return;
     }
 
-    if (amount > p.budget) {
-      alert(`Du hast nur noch ${p.budget.toFixed(2)} € Budget!`);
+    if (amount > maxBid(p)) {
+      alert(`Du kannst maximal ${maxBid(p)} € bieten (1 € pro offenem Kaderplatz bleibt reserviert).`);
       return;
     }
 
@@ -316,17 +328,24 @@
 
   function executeBid(amount) {
     const pIdx = state.activeBidderIndex;
-    if (players[pIdx].budget >= amount) {
-      state.currentPrice = amount;
-      state.highestBidderIndex = pIdx;
-      nextTurn();
+    if (maxBid(players[pIdx]) < amount) return;
+
+    state.currentPrice = amount;
+    state.highestBidderIndex = pIdx;
+
+    // Niemand sonst mehr dabei -> sofort Zuschlag
+    const othersActive = state.activeInRound.some((a, i) => a && i !== pIdx);
+    if (!othersActive) {
+      awardPlayer(pIdx);
+      return;
     }
+    nextTurn();
   }
 
   function passOrSkip() {
     const pIdx = state.activeBidderIndex;
 
-    // Falls noch niemand geboten hat (0.00 €) und noch kein erster Passer existiert, merken wir uns den ERSTEN
+    // Noch kein Gebot: der ERSTE, der aussteigt, wird gemerkt
     if (state.highestBidderIndex === null && state.firstPasserIndex === null) {
       state.firstPasserIndex = pIdx;
     }
@@ -335,20 +354,19 @@
 
     const remainingInRound = state.activeInRound.filter(x => x).length;
 
-    // SZENARIO 1: Jemand hat geboten und alle anderen sind ausgestiegen -> Zuschlag!
-    if (remainingInRound === 1 && state.highestBidderIndex !== null) {
+    // SZENARIO 1: Es gibt ein Gebot und niemand sonst bietet mehr -> Zuschlag
+    if (remainingInRound <= 1 && state.highestBidderIndex !== null) {
       awardPlayer(state.highestBidderIndex);
-    } 
-    // SZENARIO 2: ALLE sind ausgestiegen, OHNE dass ein Gebot abgegeben wurde -> Spieler verfällt!
+    }
+    // SZENARIO 2: Alle ausgestiegen, ohne Gebot -> Spieler verfällt
     else if (remainingInRound === 0 && state.highestBidderIndex === null) {
-      // NUR DER ERSTE, der geskippt hat, verliert seinen Skip!
+      // NUR der ERSTE, der geskippt hat, verliert seinen Skip
       if (state.firstPasserIndex !== null && players[state.firstPasserIndex].skipsLeft > 0) {
         players[state.firstPasserIndex].skipsLeft--;
       }
-
       state.round++;
       initRound();
-    } 
+    }
     else {
       nextTurn();
     }
@@ -360,6 +378,17 @@
       state.activeBidderIndex = (state.activeBidderIndex + 1) % config.numPlayers;
       checkCount++;
     } while (!state.activeInRound[state.activeBidderIndex] && checkCount <= config.numPlayers);
+
+    // Sicherheitsanker: niemand mehr aktiv -> Runde sauber beenden
+    if (!state.activeInRound[state.activeBidderIndex]) {
+      if (state.highestBidderIndex !== null) {
+        awardPlayer(state.highestBidderIndex);
+      } else {
+        state.round++;
+        initRound();
+      }
+      return;
+    }
 
     updateUI();
   }
@@ -382,7 +411,7 @@
           <h3>${p.name}</h3>
           <div class="budget">${p.budget.toFixed(2)} €</div>
           <div class="status-badge">
-            ${isFull ? '<strong>KADER VOLL (4/4)</strong>' : `Kader: ${p.squad.length}/4 \vert{} Skips:${p.skipsLeft}`}
+            ${isFull ? '<strong>KADER VOLL (4/4)</strong>' : `Kader: ${p.squad.length}/4 | Skips: ${p.skipsLeft}`}
           </div>
         </div>
       `;
@@ -400,6 +429,8 @@
   }
 
   function endGame() {
+    renderDashboard();
+    renderSquads();
     document.getElementById('game-area').innerHTML = `
       <h2>🏆 Draft Beendet!</h2>
       <p>Alle Runden wurden abgeschlossen.</p>
