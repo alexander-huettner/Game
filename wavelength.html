@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Wavelength</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      touch-action: manipulation;
+    }
+    body {
+      background-color: #121212;
+      color: #eee;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 15px;
+    }
+    .back-btn {
+      color: #00ffcc;
+      text-decoration: none;
+      font-size: 16px;
+      align-self: flex-start;
+      margin-bottom: 10px;
+    }
+    h1 {
+      color: #3498db;
+      font-size: 26px;
+      margin: 0 0 10px 0;
+      text-align: center;
+    }
+    .score-banner {
+      background: #1e1e1e;
+      border: 1px solid #333;
+      border-radius: 12px;
+      padding: 10px 20px;
+      margin-bottom: 15px;
+      font-size: 18px;
+      font-weight: bold;
+      color: #ffd700;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+    }
+    .card {
+      background: #1e1e1e;
+      border: 2px solid #34495e;
+      border-radius: 16px;
+      padding: 15px;
+      width: 100%;
+      max-width: 420px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    }
+    .status-header {
+      background: #2c3e50;
+      border-radius: 8px;
+      padding: 10px;
+      width: 100%;
+      text-align: center;
+      font-weight: bold;
+      margin-bottom: 15px;
+    }
+    .pair-container {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      margin-bottom: 10px;
+      font-weight: bold;
+      font-size: 15px;
+      color: #3498db;
+    }
+    .pair-box {
+      background: #282828;
+      padding: 8px 12px;
+      border-radius: 8px;
+      max-width: 48%;
+      text-align: center;
+    }
+    canvas {
+      width: 100%;
+      max-width: 380px;
+      height: auto;
+      background: #1e1e1e;
+    }
+    .controls {
+      width: 100%;
+      margin-top: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    input[type="range"] {
+      width: 100%;
+      accent-color: #e74c3c;
+    }
+    .btn {
+      border: none;
+      padding: 14px;
+      font-size: 16px;
+      font-weight: bold;
+      border-radius: 10px;
+      cursor: pointer;
+      color: white;
+      width: 100%;
+    }
+    .btn-warning { background: #f39c12; }
+    .btn-success { background: #27ae60; }
+    .btn-primary { background: #2980b9; }
+    .btn:active { transform: scale(0.98); }
+  </style>
+</head>
+<body>
+
+  <a href="index.html" class="back-btn">← Zurück zum Menü</a>
+
+  <h1>🌊 Wavelength</h1>
+
+  <div class="score-banner">
+    Punktestand: <span id="score">0</span> Pkt
+  </div>
+
+  <div class="card">
+    <div id="status" class="status-header" style="color: white;">NEUE RUNDE</div>
+
+    <div class="pair-container">
+      <div class="pair-box" id="left-pair">◄ -</div>
+      <div class="pair-box" id="right-pair">- ►</div>
+    </div>
+
+    <canvas id="dialCanvas" width="400" height="230"></canvas>
+
+    <div class="controls">
+      <input type="range" id="guessSlider" min="0" max="100" value="50">
+      <div id="btnContainer"></div>
+    </div>
+  </div>
+
+  <script>
+    // Kategorien-Datenbank aus deinem Python-Code
+    const pairs = [
+      ["Kalt", "Heiß"], ["Nutzloses Talent", "Nützliches Talent"], ["Klassik", "Pop"],
+      ["Leise", "Laut"], ["Altmodisch", "Modern"], ["Langsam", "Schnell"],
+      ["Gefährlich", "Sicher"], ["Proteinarm", "Proteinreich"], ["Geisteswissenschaft", "Naturwissenschaft"],
+      ["Ethisch", "Unethisch"], ["Langweilig", "Spannend"], ["Günstig", "Teuer"],
+      ["Hässlich", "Schön"], ["Kindisch", "Erwachsen"], ["Salzig", "Süß"],
+      ["Leichtes Essen", "Deftiges Essen"], ["Introvertiert", "Extrovertiert"], ["Kurzlebig", "Langlebig"],
+      ["Entspannend", "Stressig"], ["Unterschätzt", "Überschätzt"], ["Dystopie", "Utopie"],
+      ["Schlechter Film", "Guter Film"], ["Unbequem", "Bequem"], ["Normal", "Seltsam"],
+      ["Wenig Kalorien", "Viele Kalorien"], ["Vergangenheit", "Zukunft"], ["Chaos", "Ordnung"],
+      ["Eckig", "Rund"], ["Trocken", "Feucht"], ["Schwaches Tier", "Starkes Tier"],
+      ["Unwichtig", "Lebenswichtig"], ["Feigling", "Held"], ["Schwer zu finden", "Leicht zu finden"],
+      ["Müll", "Schatz"], ["Flexibel", "Starr"], ["Spontan", "Geplant"],
+      ["Klein", "Groß"], ["Dunkel", "Hell"], ["Sanft", "Aggressiv"],
+      ["Einzelgänger", "Rudeltier"], ["Verschwendung", "Sparen"], ["Lokal", "Global"],
+      ["Künstlich", "Natürlich"], ["Leicht zu lernen", "Schwer zu lernen"], ["Traurig", "Fröhlich"],
+      ["Kurz", "Lang"], ["Teilzeit", "Vollzeit"], ["Analog", "Digital"]
+    ];
+
+    let targetVal = 50;
+    let currentPair = ["?", "?"];
+    let phase = "medium"; // "medium", "team", "result"
+    let totalScore = 0;
+
+    const canvas = document.getElementById("dialCanvas");
+    const ctx = canvas.getContext("2d");
+    const slider = document.getElementById("guessSlider");
+
+    function newRound() {
+      targetVal = Math.floor(Math.random() * 71) + 15; // 15 bis 85
+      currentPair = pairs[Math.floor(Math.random() * pairs.length)];
+      slider.value = 50;
+      phase = "medium";
+
+      document.getElementById("left-pair").innerText = "◄ " + currentPair[0].toUpperCase();
+      document.getElementById("right-pair").innerText = currentPair[1].toUpperCase() + " ►";
+      
+      updateUI();
+    }
+
+    function valToRad(val) {
+      // 0 = Math.PI (Links), 100 = 0 (Rechts)
+      return Math.PI - ((val / 100) * Math.PI);
+    }
+
+    function drawDial(guessVal, showTarget) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const cx = canvas.width / 2;
+      const cy = canvas.height - 20;
+      const radius = 170;
+
+      // Hintergrund-Halbkreis
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius, Math.PI, 0, false);
+      ctx.fillStyle = "#2c3e50";
+      ctx.fill();
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = "#34495e";
+      ctx.stroke();
+
+      if (showTarget) {
+        // Ziel-Sektoren zeichnen
+        const tRad = valToRad(targetVal);
+
+        // 2 Punkte Zone (16 Einheiten breit)
+        drawArcSector(cx, cy, radius, tRad, (16/100)*Math.PI, "#ff4d4d");
+        // 3 Punkte Zone (8 Einheiten breit)
+        drawArcSector(cx, cy, radius, tRad, (8/100)*Math.PI, "#ffa500");
+        // 4 Punkte Zone / Bullseye (4 Einheiten breit)
+        drawArcSector(cx, cy, radius, tRad, (4/100)*Math.PI, "#ffd700");
+      } else {
+        // Sichtschirm geschlossen
+        ctx.fillStyle = "rgba(44, 62, 80, 0.95)";
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius - 2, Math.PI, 0, false);
+        ctx.fill();
+
+        ctx.fillStyle = "rgba(255, 255, 255, 0.25)";
+        ctx.font = "bold 20px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("SICHTSCHIRM AKTIV", cx, cy - 70);
+      }
+
+      // Zeiger zeichnen
+      const gRad = valToRad(guessVal);
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(cx + Math.cos(gRad) * (radius - 10), cy - Math.sin(gRad) * (radius - 10));
+      ctx.lineWidth = 6;
+      ctx.strokeStyle = "#e74c3c";
+      ctx.stroke();
+
+      // Nabe
+      ctx.beginPath();
+      ctx.arc(cx, cy, 14, 0, 2 * Math.PI);
+      ctx.fillStyle = "#ffffff";
+      ctx.fill();
+    }
+
+    function drawArcSector(cx, cy, radius, centerAngle, widthAngle, color) {
+      const startAngle = centerAngle - (widthAngle / 2);
+      const endAngle = centerAngle + (widthAngle / 2);
+
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      // Canvas Bögen laufen im Uhrzeigersinn, wir spiegeln für mathematische Winkel
+      ctx.arc(cx, cy, radius - 2, 2 * Math.PI - endAngle, 2 * Math.PI - startAngle, false);
+      ctx.closePath();
+      ctx.fillStyle = color;
+      ctx.fill();
+    }
+
+    function updateUI() {
+      const statusEl = document.getElementById("status");
+      const btnContainer = document.getElementById("btnContainer");
+
+      if (phase === "medium") {
+        statusEl.innerHTML = '<span style="color:#f39c12;">SIGNAL-GEBER: Einprägen & Hinweis geben!</span>';
+        slider.disabled = true;
+        btnContainer.innerHTML = `
+          <button class="btn btn-warning" onclick="goToTeamPhase()">BEREIT ZUM RATEN (Schirm zu) 🔒</button>
+        `;
+        drawDial(50, true);
+      } else if (phase === "team") {
+        statusEl.innerHTML = '<span style="color:#3498db;">TEAM: Schieberegler einstellen!</span>';
+        slider.disabled = false;
+        btnContainer.innerHTML = `
+          <button class="btn btn-success" onclick="goToResultPhase()">AUFLÖSEN 🎯</button>
+        `;
+        drawDial(slider.value, false);
+      } else if (phase === "result") {
+        const diff = Math.abs(slider.value - targetVal);
+        let pts = 0;
+        let msg = "DANEBEN!";
+        let color = "#e74c3c";
+
+        if (diff <= 2) { pts = 4; msg = "BULLSEYE!"; color = "#ffd700"; }
+        else if (diff <= 4) { pts = 3; msg = "SUPER GETROFFEN!"; color = "#ffa500"; }
+        else if (diff <= 8) { pts = 2; msg = "TREFFER!"; color = "#ff4d4d"; }
+
+        if (pts > 0 && phase === "result_first") {
+          totalScore += pts;
+          document.getElementById("score").innerText = totalScore;
+        }
+
+        statusEl.innerHTML = `<span style="color:${color};">${msg} (+${pts} Pkt)</span>`;
+        slider.disabled = true;
+        btnContainer.innerHTML = `
+          <button class="btn btn-primary" onclick="newRound()">NÄCHSTE RUNDE 🚀</button>
+        `;
+        drawDial(slider.value, true);
+      }
+    }
+
+    function goToTeamPhase() {
+      phase = "team";
+      updateUI();
+    }
+
+    function goToResultPhase() {
+      phase = "result_first";
+      updateUI();
+      phase = "result";
+    }
+
+    slider.addEventListener("input", () => {
+      if (phase === "team") {
+        drawDial(slider.value, false);
+      }
+    });
+
+    // Erste Runde beim Laden starten
+    newRound();
+  </script>
+</body>
+</html>
