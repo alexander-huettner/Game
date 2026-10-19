@@ -49,7 +49,17 @@
     }
     .bid-info { font-size: 14px; color: #aaa; margin-bottom: 15px; }
     
-    .controls { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+    /* Custom Input Controls */
+    .manual-bid-box {
+      display: flex; gap: 8px; justify-content: center; margin-bottom: 12px;
+    }
+    .manual-bid-box input {
+      width: 110px; padding: 10px; font-size: 16px; font-weight: bold;
+      background: #121212; border: 2px solid #00ffcc; color: white;
+      border-radius: 10px; text-align: center;
+    }
+
+    .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     button {
       background: #2a2a2a; border: 2px solid #00ffcc; color: white; padding: 12px 5px;
       border-radius: 10px; font-size: 14px; font-weight: bold; cursor: pointer;
@@ -57,7 +67,7 @@
     button:active { transform: scale(0.96); }
     button:disabled { border-color: #444; color: #555; cursor: not-allowed; }
     button.btn-pass { border-color: #ff9900; }
-    button.btn-skip { border-color: #ff4444; }
+    button.btn-skip { border-color: #ff4444; grid-column: span 2; }
 
     /* Kader */
     .squads { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
@@ -85,10 +95,10 @@
   <div id="setup-area" class="setup-box">
     <h3>Anzahl der Mitspieler wählen:</h3>
     <select id="num-players">
-      <option value="2">2 Spieler</option>
-      <option value="3" selected>3 Spieler</option>
-      <option value="4">4 Spieler</option>
-      <option value="5">5 Spieler</option>
+      <option value="2">2 Spieler (je 20 € Budget)</option>
+      <option value="3" selected>3 Spieler (je 30 € Budget)</option>
+      <option value="4">4 Spieler (je 40 € Budget)</option>
+      <option value="5">5 Spieler (je 50 € Budget)</option>
     </select>
     <br><br>
     <button onclick="startGame()">Spiel Starten</button>
@@ -107,10 +117,16 @@
       <div id="current-price" class="price-display">0.00 €</div>
       <div id="bid-info" class="bid-info">Noch keine Gebote</div>
 
+      <!-- Manuelles Gebot -->
+      <div class="manual-bid-box">
+        <input type="number" id="custom-bid-input" min="1" step="1" placeholder="z.B. 10">
+        <button id="btn-custom-bid" onclick="placeCustomBid()">Bieten (€)</button>
+      </div>
+
       <div class="controls">
-        <button id="btn-bid" onclick="placeBid()">Bieten (+1.00 €)</button>
+        <button id="btn-bid" onclick="placeStepBid()">+1.00 € Bieten</button>
         <button id="btn-pass" class="btn-pass" onclick="passBid()">Aussteigen (Passen)</button>
-        <button id="btn-skip" class="btn-skip" onclick="skipPlayer()">Karte Skippen (1x)</button>
+        <button id="btn-skip" class="btn-skip" onclick="skipPlayer()">Karte Skippen (1x pro Spiel)</button>
       </div>
     </div>
 
@@ -142,25 +158,27 @@
     currentPrice: 0.0,
     highestBidderIndex: null,
     activeBidderIndex: 0,
-    activeInRound: [], // Wer bietet in der aktuellen Runde noch mit?
+    activeInRound: [], // Wer bietet in dieser Runde noch mit?
   };
 
   function startGame() {
     config.numPlayers = parseInt(document.getElementById('num-players').value);
-    config.totalRounds = config.numPlayers * 5; // z.B. 3 Spieler = 15 Runden
+    config.totalRounds = config.numPlayers * 5; // z.B. 2 Spieler = 10 Runden, 3 Spieler = 15 Runden
     
     // Pool aus spieler.js kombinieren
     const namenEinfach = SPIELER_EINFACH.map(e => e[0]);
     const namenSchwer = SPIELER_SCHWER.map(e => e[0]);
     pool = [...namenEinfach, ...namenSchwer].sort(() => Math.random() - 0.5);
 
-    // Spieler-Objekte initialisieren
+    // Budget: 2 Spieler = 20€, 3 Spieler = 30€, 4 Spieler = 40€ ...
+    const startBudget = config.numPlayers * 10.0;
+
     players = [];
     for (let i = 0; i < config.numPlayers; i++) {
       players.push({
         id: i,
         name: `Spieler ${String.fromCharCode(65 + i)}`,
-        budget: config.numPlayers * 20.0, // Budget skaliert mit Spieleranzahl
+        budget: startBudget,
         squad: [],
         skipsLeft: 1
       });
@@ -182,11 +200,13 @@
     state.currentPrice = 0.0;
     state.highestBidderIndex = null;
     
-    // Alle Spieler nehmen zu Beginn der Runde teil
+    // Alle Spieler aktivieren
     state.activeInRound = players.map(p => true);
 
-    // Start-Bieter rotiert jede Runde
+    // Starter-Rotation
     state.activeBidderIndex = (state.round - 1) % config.numPlayers;
+
+    document.getElementById('custom-bid-input').value = "";
 
     renderDashboard();
     renderSquads();
@@ -204,7 +224,7 @@
       : `Am Zug: ${activeP.name}`;
     document.getElementById('bid-info').innerText = bidText;
 
-    // Active Highlight im Dashboard
+    // Active Highlight
     players.forEach((p, idx) => {
       const card = document.getElementById(`p-card-${idx}`);
       if (card) {
@@ -221,29 +241,58 @@
     const nextBid = state.highestBidderIndex !== null ? state.currentPrice + 1.0 : 1.0;
 
     const btnBid = document.getElementById('btn-bid');
+    const btnCustomBid = document.getElementById('btn-custom-bid');
     const btnPass = document.getElementById('btn-pass');
     const btnSkip = document.getElementById('btn-skip');
 
-    // Bieten-Prüfung
+    // Bieten-Buttons aktivieren/deaktivieren
     btnBid.disabled = p.budget < nextBid;
+    btnCustomBid.disabled = p.budget < nextBid;
 
-    // Passen-Prüfung (Pflichtkauf-Prüfung)
+    // Mindestwert für das benutzerdefinierte Gebotsfeld setzen
+    const customInput = document.getElementById('custom-bid-input');
+    customInput.min = Math.floor(nextBid);
+
+    // Pflichtkauf-Prüfung
     const remainingRounds = config.totalRounds - state.round + 1;
     const needed = config.targetSquadSize - p.squad.length;
     const mustBuy = needed >= remainingRounds;
     
     btnPass.disabled = mustBuy && state.highestBidderIndex !== state.activeBidderIndex;
-
-    // Kompletter Spieler-Skip (nur 1x pro Spiel)
     btnSkip.disabled = p.skipsLeft <= 0 || mustBuy;
   }
 
-  function placeBid() {
-    const pIdx = state.activeBidderIndex;
+  // Bieten in +1 € Schritten
+  function placeStepBid() {
     const nextBid = state.highestBidderIndex !== null ? state.currentPrice + 1.0 : 1.0;
+    executeBid(nextBid);
+  }
 
-    if (players[pIdx].budget >= nextBid) {
-      state.currentPrice = nextBid;
+  // Bieten per manuellem Betrag
+  function placeCustomBid() {
+    const input = document.getElementById('custom-bid-input');
+    const amount = parseInt(input.value, 10);
+    const minRequired = state.highestBidderIndex !== null ? state.currentPrice + 1.0 : 1.0;
+    const p = players[state.activeBidderIndex];
+
+    if (isNaN(amount) || amount < minRequired) {
+      alert(`Bitte gib ein gültiges Gebot von mindestens ${Math.ceil(minRequired)} € ein.`);
+      return;
+    }
+
+    if (amount > p.budget) {
+      alert(`Du hast nur noch ${p.budget.toFixed(2)} € Budget!`);
+      return;
+    }
+
+    executeBid(amount);
+    input.value = "";
+  }
+
+  function executeBid(amount) {
+    const pIdx = state.activeBidderIndex;
+    if (players[pIdx].budget >= amount) {
+      state.currentPrice = amount;
       state.highestBidderIndex = pIdx;
       nextTurn();
     }
@@ -252,14 +301,13 @@
   function passBid() {
     state.activeInRound[state.activeBidderIndex] = false;
 
-    // Wie viele bieten noch mit?
     const remainingInRound = state.activeInRound.filter(x => x).length;
 
     if (remainingInRound === 1 && state.highestBidderIndex !== null) {
-      // Nur noch der Höchstbietende ist übrig -> Zuschlag!
+      // Höchstbietender bekommt Zuschlag
       awardPlayer(state.highestBidderIndex);
     } else if (remainingInRound === 0 || (remainingInRound === 1 && state.highestBidderIndex === null)) {
-      // Alle haben gepasst, ohne ein Gebot abzugeben -> Karte verfällt
+      // Alle haben gepasst
       state.round++;
       initRound();
     } else {
@@ -271,7 +319,6 @@
     const p = players[state.activeBidderIndex];
     if (p.skipsLeft > 0) {
       p.skipsLeft--;
-      // Dieser Spieler wird direkt abgebrochen, Runde neu geladen
       state.round++;
       initRound();
     }
