@@ -107,78 +107,12 @@
 
   <div id="app" class="card"></div>
 
+  <script src="spieler.js"></script>
   <script>
-    /* ---------- Spielerlisten (n = Name, h = Tipp für den Imposter) ---------- */
-    const EINFACH = [
-      { n: "Messi", h: "Argentinien · Stürmer" },
-      { n: "Cristiano Ronaldo", h: "Portugal · Stürmer" },
-      { n: "Kylian Mbappé", h: "Frankreich · Stürmer" },
-      { n: "Erling Haaland", h: "Norwegen · Stürmer" },
-      { n: "Kevin De Bruyne", h: "Belgien · Mittelfeld" },
-      { n: "Neymar", h: "Brasilien · Stürmer" },
-      { n: "Mohamed Salah", h: "Ägypten · Flügel" },
-      { n: "Harry Kane", h: "England · Stürmer" },
-      { n: "Robert Lewandowski", h: "Polen · Stürmer" },
-      { n: "Karim Benzema", h: "Frankreich · Stürmer" },
-      { n: "Luka Modrić", h: "Kroatien · Mittelfeld" },
-      { n: "Jude Bellingham", h: "England · Mittelfeld" },
-      { n: "Zinédine Zidane", h: "Frankreich · Mittelfeld" },
-      { n: "Diego Maradona", h: "Argentinien · Offensiv" },
-      { n: "Pelé", h: "Brasilien · Stürmer" },
-      { n: "Ronaldinho", h: "Brasilien · Offensiv" },
-      { n: "David Beckham", h: "England · Mittelfeld" },
-      { n: "Zlatan Ibrahimović", h: "Schweden · Stürmer" },
-      { n: "Thomas Müller", h: "Deutschland · Offensiv" },
-      { n: "Manuel Neuer", h: "Deutschland · Torwart" },
-      { n: "Toni Kroos", h: "Deutschland · Mittelfeld" }
-    ];
-
-    const SCHWER = [
-      { n: "Vinícius Júnior", h: "Brasilien · Flügel" },
-      { n: "Pedri", h: "Spanien · Mittelfeld" },
-      { n: "Gavi", h: "Spanien · Mittelfeld" },
-      { n: "Antoine Griezmann", h: "Frankreich · Offensiv" },
-      { n: "João Félix", h: "Portugal · Offensiv" },
-      { n: "Federico Valverde", h: "Uruguay · Mittelfeld" },
-      { n: "Bukayo Saka", h: "England · Flügel" },
-      { n: "Phil Foden", h: "England · Offensiv" },
-      { n: "Ronaldo Nazário", h: "Brasilien · Stürmer" },
-      { n: "Thierry Henry", h: "Frankreich · Stürmer" },
-      { n: "Andrea Pirlo", h: "Italien · Mittelfeld" },
-      { n: "Xavi", h: "Spanien · Mittelfeld" },
-      { n: "Andrés Iniesta", h: "Spanien · Mittelfeld" },
-      { n: "Francesco Totti", h: "Italien · Offensiv" },
-      { n: "Iker Casillas", h: "Spanien · Torwart" },
-      { n: "Gianluigi Buffon", h: "Italien · Torwart" },
-      { n: "Paolo Maldini", h: "Italien · Verteidiger" },
-      { n: "Kaká", h: "Brasilien · Offensiv" },
-      { n: "Fernando Torres", h: "Spanien · Stürmer" },
-      { n: "Wayne Rooney", h: "England · Stürmer" },
-      { n: "Frank Lampard", h: "England · Mittelfeld" },
-      { n: "Steven Gerrard", h: "England · Mittelfeld" },
-      { n: "Arjen Robben", h: "Niederlande · Flügel" },
-      { n: "Philipp Lahm", h: "Deutschland · Verteidiger" },
-      { n: "Bastian Schweinsteiger", h: "Deutschland · Mittelfeld" },
-      { n: "Michael Ballack", h: "Deutschland · Mittelfeld" },
-      { n: "Didier Drogba", h: "Elfenbeinküste · Stürmer" },
-      { n: "Lothar Matthäus", h: "Deutschland · Mittelfeld" },
-      { n: "Marco Reus", h: "Deutschland · Offensiv" },
-      { n: "Jamal Musiala", h: "Deutschland · Offensiv" },
-      { n: "Florian Wirtz", h: "Deutschland · Offensiv" },
-      { n: "Franck Ribéry", h: "Frankreich · Flügel" },
-      { n: "Sergio Ramos", h: "Spanien · Verteidiger" },
-      { n: "Gerard Piqué", h: "Spanien · Verteidiger" },
-      { n: "Raúl", h: "Spanien · Stürmer" },
-      { n: "Dennis Bergkamp", h: "Niederlande · Stürmer" },
-      { n: "Éric Cantona", h: "Frankreich · Stürmer" },
-      { n: "Gareth Bale", h: "Wales · Flügel" },
-      { n: "N'Golo Kanté", h: "Frankreich · Mittelfeld" },
-      { n: "Miroslav Klose", h: "Deutschland · Stürmer" },
-      { n: "Joshua Kimmich", h: "Deutschland · Mittelfeld" },
-      { n: "Lamine Yamal", h: "Spanien · Flügel" },
-      { n: "Rodri", h: "Spanien · Mittelfeld" },
-      { n: "Virgil van Dijk", h: "Niederlande · Verteidiger" }
-    ];
+    /* ---------- Spielerlisten kommen aus spieler.js ---------- */
+    const toList = (arr) => arr.map(([n, ...h]) => ({ n, h }));
+    const EINFACH = toList(SPIELER_EINFACH);
+    const SCHWER = toList(SPIELER_SCHWER);
 
     const MIN_PLAYERS = 3, MAX_PLAYERS = 12;
     const app = document.getElementById("app");
@@ -222,13 +156,13 @@
           <button data-diff="schwer" class="${s.difficulty === "schwer" ? "active" : ""}">Schwer</button>
         </div>
         <p class="intro">${s.difficulty === "einfach"
-          ? "Einfache und bekannte Spieler"
-          : "Schwere Spieler – nur für Kenner."}</p>
+          ? "Starke Namen: Messi, Ronaldo &amp; Co."
+          : "Auch Legenden &amp; Geheimtipps – nur für Kenner."}</p>
 
         <div class="toggle-row">
           <div>
             <div class="t">Hinweis für den Imposter</div>
-            <div class="s">Imposter bekommt zufälligen Hinweis</div>
+            <div class="s">Imposter bekommt einen zufälligen Tipp</div>
           </div>
           <label class="switch">
             <input type="checkbox" id="hintToggle" ${s.hint ? "checked" : ""}>
@@ -279,6 +213,7 @@
 
       round = {
         player,
+        hint: player.h[rand(player.h.length)],   // pro Runde nur EIN zufälliger Hinweis
         imposter: rand(activeNames.length),
         starter: rand(activeNames.length),
         seen: activeNames.map(() => false),
@@ -300,7 +235,7 @@
         if (isOpen && isImp) {
           out = `<div class="role-output imposter">
                    <div class="name">🕵️ Du bist Imposter</div>
-                   ${settings.hint ? `<div class="hint">Tipp: ${esc(r.player.h)}</div>` : ""}
+                   ${settings.hint ? `<div class="hint">Tipp: ${esc(r.hint)}</div>` : ""}
                    <div class="tap">Tippen zum Verstecken</div>
                  </div>`;
         } else if (isOpen) {
