@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>QuizBoard / Jeopardy</title>
+  <title>QuizBoard AI</title>
   <style>
     * {
       box-sizing: border-box;
@@ -77,12 +77,13 @@
       background: #000055;
       color: gold;
       font-weight: bold;
-      font-size: 12px;
-      padding: 12px 4px;
+      font-size: 11px;
+      padding: 10px 2px;
       border-radius: 8px;
       border: 1px solid #0000aa;
       text-align: center;
       text-transform: uppercase;
+      word-break: break-word;
     }
     .val-btn {
       background: #060ce9;
@@ -171,47 +172,44 @@
     }
     .btn-plus { background: #27ae60; }
     .btn-minus { background: #e74c3c; }
+    input[type="text"], input[type="password"] {
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #444;
+      background: #222;
+      color: white;
+      width: 100%;
+    }
+    .loader {
+      border: 4px solid #333;
+      border-top: 4px solid gold;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 20px auto;
+    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
 
   <a href="index.html" class="back-btn">← Zurück zum Menü</a>
 
-  <h1>🏆 QuizBoard</h1>
+  <h1>🏆 QuizBoard AI</h1>
 
   <div id="app" style="width: 100%; max-width: 500px;"></div>
 
   <script>
-    const questionsDatabase = {
-      "Fußball": {
-        "100": { frage: "Welches Land gewann die Fußball-Weltmeisterschaft 2014?", antwort: "Deutschland" },
-        "200": { frage: "Wie viele Spieler stehen pro Mannschaft auf dem Feld?", antwort: "11 Spieler" },
-        "300": { frage: "Welcher Verein wird als 'Die Königlichen' bezeichnet?", antwort: "Real Madrid" },
-        "500": { frage: "Wer hält den Rekord für die meisten Tore in einem Kalenderjahr (91 Tore)?", antwort: "Lionel Messi" },
-        "1000": { frage: "In welchem Jahr wurde die deutsche Bundesliga gegründet?", antwort: "1963" }
-      },
-      "Geografie": {
-        "100": { frage: "Was ist die Hauptstadt von Frankreich?", antwort: "Paris" },
-        "200": { frage: "Welcher ist der längste Fluss der Welt?", antwort: "Nil (oder Amazonas)" },
-        "300": { frage: "Auf welchem Kontinent liegt Ägypten?", antwort: "Afrika" },
-        "500": { frage: "Wie heißt die Hauptstadt von Australien?", antwort: "Canberra" },
-        "1000": { frage: "Welches Land hat weltweit die meisten Zeitzonen?", antwort: "Frankreich (12 inkl. Überseegebiete)" }
-      },
-      "Allgemeinwissen": {
-        "100": { frage: "Wie viele Tage hat ein Schaltjahr?", antwort: "366 Tage" },
-        "200": { frage: "Aus wie vielen Farben besteht ein Regenbogen?", antwort: "7 Farben" },
-        "300": { frage: "Wie heißt das chemische Element mit dem Symbol 'O'?", antwort: "Sauerstoff" },
-        "500": { frage: "Wer malte die berühmte 'Mona Lisa'?", antwort: "Leonardo da Vinci" },
-        "1000": { frage: "Was ist die härteste natürliche Substanzen der Welt?", antwort: "Diamant" }
-      }
-    };
-
-    const categories = Object.keys(questionsDatabase);
+    const defaultCategories = ["Fußball", "Geografie", "Allgemeinwissen"];
     const levels = [100, 200, 300, 500, 1000];
 
+    let apiKey = localStorage.getItem("gemini_api_key") || "";
     let teams = [];
     let currentTurnIdx = 0;
     let played = new Set();
+    let questionsDatabase = {};
+    let categories = [];
     let currentQ = null;
     let curCat = "";
     let curLvl = 0;
@@ -222,14 +220,24 @@
     function renderSetup() {
       app.innerHTML = `
         <div class="card-modal">
-          <h2>Teams erstellen</h2>
-          <div style="display:flex; justify-content:center; align-items:center; gap:15px;">
-            <button class="btn btn-primary" style="width:50px;" onclick="changeTeamCount(-1)">-</button>
-            <span id="team-count-lbl" style="font-weight:bold; font-size:18px;">3 Teams</span>
-            <button class="btn btn-primary" style="width:50px;" onclick="changeTeamCount(1)">+</button>
+          <h2>🎲 Spiel-Setup</h2>
+          
+          <div style="text-align:left;">
+            <label style="font-size:12px; color:#aaa;">Gemini API-Key:</label>
+            <input type="password" id="api-key-input" value="${apiKey}" placeholder="AIzaSy...">
           </div>
+
+          <div>
+            <label style="font-size:12px; color:#aaa;">Anzahl Teams:</label>
+            <div style="display:flex; justify-content:center; align-items:center; gap:15px; margin-top:5px;">
+              <button class="btn btn-primary" style="width:40px;" onclick="changeTeamCount(-1)">-</button>
+              <span id="team-count-lbl" style="font-weight:bold; font-size:18px;">3 Teams</span>
+              <button class="btn btn-primary" style="width:40px;" onclick="changeTeamCount(1)">+</button>
+            </div>
+          </div>
+
           <div id="team-inputs" style="display:flex; flex-direction:column; gap:8px;"></div>
-          <button class="btn btn-success" onclick="startGame()">SPIEL STARTEN 🚀</button>
+          <button class="btn btn-success" onclick="startGeneration()">SPIEL MIT KI GENERIEREN 🤖</button>
         </div>
       `;
       updateInputs(3);
@@ -246,18 +254,79 @@
       const container = document.getElementById("team-inputs");
       let html = "";
       for (let i = 0; i < count; i++) {
-        html += `<input type="text" id="t-input-${i}" placeholder="Team ${i+1}" style="padding:10px; border-radius:6px; border:1px solid #444; background:#222; color:white;">`;
+        html += `<input type="text" id="t-input-${i}" placeholder="Team ${i+1}">`;
       }
       container.innerHTML = html;
     }
 
-    function startGame() {
+    async function startGeneration() {
+      const keyInput = document.getElementById("api-key-input").value.trim();
+      if (!keyInput) {
+        alert("Bitte trage deinen Gemini API-Key ein!");
+        return;
+      }
+
+      apiKey = keyInput;
+      localStorage.setItem("gemini_api_key", apiKey);
+
       teams = [];
       for (let i = 0; i < teamCount; i++) {
         const val = document.getElementById(`t-input-${i}`).value.trim();
         teams.push({ name: val || `Team ${i+1}`, score: 0 });
       }
-      renderBoard();
+
+      app.innerHTML = `
+        <div class="card-modal">
+          <h2>🎲 KI generiert Fragen...</h2>
+          <div class="loader"></div>
+          <p style="color:#aaa; font-size:14px;">Erstelle ein frisches Quizboard über Gemini...</p>
+        </div>
+      `;
+
+      try {
+        const data = await fetchQuestionsFromGemini(apiKey);
+        questionsDatabase = data;
+        categories = Object.keys(questionsDatabase);
+        played.clear();
+        currentTurnIdx = 0;
+        renderBoard();
+      } catch (err) {
+        alert("Fehler bei der KI-Generierung: " + err.message);
+        renderSetup();
+      }
+    }
+
+    async function fetchQuestionsFromGemini(key) {
+      const prompt = `Erstelle ein Jeopardy Quiz. Kategorien: ${JSON.stringify(defaultCategories)}. Levels: [100, 200, 300, 500, 1000]. Antworte AUSSCHLIESSLICH als valides JSON in genau diesem Format ohne Markdown-Codeblocks:
+{
+  "Fußball": {
+    "100": {"frage": "...", "antwort": "..."},
+    "200": {"frage": "...", "antwort": "..."},
+    "300": {"frage": "...", "antwort": "..."},
+    "500": {"frage": "...", "antwort": "..."},
+    "1000": {"frage": "...", "antwort": "..."}
+  },
+  "Geografie": { ... },
+  "Allgemeinwissen": { ... }
+}`;
+
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }]
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error("API-Key ungültig oder Netzwerkerreichbarkeit eingeschränkt.");
+      }
+
+      const resData = await response.json();
+      let rawText = resData.candidates[0].content.parts[0].text;
+      rawText = rawText.replace(/```json/g, "").replace(/```/g, "").trim();
+
+      return JSON.parse(rawText);
     }
 
     function getScoreBoardHtml() {
