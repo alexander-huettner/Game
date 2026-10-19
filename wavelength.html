@@ -30,19 +30,8 @@
     h1 {
       color: #3498db;
       font-size: 26px;
-      margin: 0 0 10px 0;
+      margin: 0 0 15px 0;
       text-align: center;
-    }
-    .score-banner {
-      background: #1e1e1e;
-      border: 1px solid #333;
-      border-radius: 12px;
-      padding: 10px 20px;
-      margin-bottom: 15px;
-      font-size: 18px;
-      font-weight: bold;
-      color: #ffd700;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.4);
     }
     .card {
       background: #1e1e1e;
@@ -75,11 +64,13 @@
       color: #3498db;
     }
     .pair-box {
-      background: #282828;
-      padding: 8px 12px;
-      border-radius: 8px;
-      max-width: 48%;
-      text-align: center;
+    background: #282828;
+    padding: 8px 10px;
+    border-radius: 8px;
+    max-width: 48%;
+    text-align: center;
+    font-size: 13px; /* Hier die gewünschte Schriftgröße eintragen (z.B. 12px oder 13px) */
+    line-height: 1.2;
     }
     canvas {
       width: 100%;
@@ -120,10 +111,6 @@
 
   <h1>🌊 Wavelength</h1>
 
-  <div class="score-banner">
-    Punktestand: <span id="score">0</span> Pkt
-  </div>
-
   <div class="card">
     <div id="status" class="status-header" style="color: white;">NEUE RUNDE</div>
 
@@ -141,7 +128,6 @@
   </div>
 
   <script>
-    // Kategorien-Datenbank aus deinem Python-Code
     const pairs = [
       ["Kalt", "Heiß"], ["Nutzloses Talent", "Nützliches Talent"], ["Klassik", "Pop"],
       ["Leise", "Laut"], ["Altmodisch", "Modern"], ["Langsam", "Schnell"],
@@ -154,7 +140,7 @@
       ["Wenig Kalorien", "Viele Kalorien"], ["Vergangenheit", "Zukunft"], ["Chaos", "Ordnung"],
       ["Eckig", "Rund"], ["Trocken", "Feucht"], ["Schwaches Tier", "Starkes Tier"],
       ["Unwichtig", "Lebenswichtig"], ["Feigling", "Held"], ["Schwer zu finden", "Leicht zu finden"],
-      ["Müll", "Schatz"], ["Flexibel", "Starr"], ["Spontan", "Geplanned"],
+      ["Müll", "Schatz"], ["Flexibel", "Starr"], ["Spontan", "Geplant"],
       ["Klein", "Groß"], ["Dunkel", "Hell"], ["Sanft", "Aggressiv"],
       ["Einzelgänger", "Rudeltier"], ["Verschwendung", "Sparen"], ["Lokal", "Global"],
       ["Künstlich", "Natürlich"], ["Leicht zu lernen", "Schwer zu lernen"], ["Traurig", "Fröhlich"],
@@ -164,7 +150,6 @@
     let targetVal = 50;
     let currentPair = ["?", "?"];
     let phase = "medium"; // "medium", "team", "result"
-    let totalScore = 0;
 
     const canvas = document.getElementById("dialCanvas");
     const ctx = canvas.getContext("2d");
@@ -205,11 +190,9 @@
       if (showTarget) {
         const tRad = valToRad(targetVal);
 
-        // 2 Punkte Zone (16 Einheiten breit)
+        // Zonen
         drawArcSector(cx, cy, radius, tRad, (16/100)*Math.PI, "#ff4d4d");
-        // 3 Punkte Zone (8 Einheiten breit)
         drawArcSector(cx, cy, radius, tRad, (8/100)*Math.PI, "#ffa500");
-        // 4 Punkte Zone / Bullseye (4 Einheiten breit)
         drawArcSector(cx, cy, radius, tRad, (4/100)*Math.PI, "#ffd700");
       } else {
         // Sichtschirm geschlossen
@@ -272,15 +255,14 @@
         drawDial(slider.value, false);
       } else if (phase === "result") {
         const diff = Math.abs(slider.value - targetVal);
-        let pts = 0;
         let msg = "DANEBEN!";
         let color = "#e74c3c";
 
-        if (diff <= 2) { pts = 4; msg = "BULLSEYE!"; color = "#ffd700"; }
-        else if (diff <= 4) { pts = 3; msg = "SUPER GETROFFEN!"; color = "#ffa500"; }
-        else if (diff <= 8) { pts = 2; msg = "TREFFER!"; color = "#ff4d4d"; }
+        if (diff <= 2) { msg = "VOLLETS VOLLES BULLSEYE!"; color = "#ffd700"; }
+        else if (diff <= 4) { msg = "SUPER GETROFFEN!"; color = "#ffa500"; }
+        else if (diff <= 8) { msg = "GUT GETROFFEN!"; color = "#ff4d4d"; }
 
-        statusEl.innerHTML = `<span style="color:${color};">${msg} (+${pts} Pkt)</span>`;
+        statusEl.innerHTML = `<span style="color:${color};">${msg}</span>`;
         slider.disabled = true;
         btnContainer.innerHTML = `
           <button class="btn btn-primary" onclick="newRound()">NÄCHSTE RUNDE 🚀</button>
@@ -295,15 +277,6 @@
     }
 
     function goToResultPhase() {
-      const diff = Math.abs(slider.value - targetVal);
-      let pts = 0;
-      if (diff <= 2) pts = 4;
-      else if (diff <= 4) pts = 3;
-      else if (diff <= 8) pts = 2;
-
-      totalScore += pts;
-      document.getElementById("score").innerText = totalScore;
-
       phase = "result";
       updateUI();
     }
@@ -317,3 +290,5 @@
     // Erste Runde beim Laden starten
     newRound();
   </script>
+</body>
+</html>
