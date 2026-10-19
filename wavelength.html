@@ -129,23 +129,40 @@
 
   <script>
     const pairs = [
-      ["Kalt", "Heiß"], ["Nutzloses Talent", "Nützliches Talent"], ["Klassik", "Pop"],
-      ["Leise", "Laut"], ["Altmodisch", "Modern"], ["Langsam", "Schnell"],
-      ["Gefährlich", "Sicher"], ["Proteinarm", "Proteinreich"], ["Geisteswissenschaft", "Naturwissenschaft"],
-      ["Ethisch", "Unethisch"], ["Langweilig", "Spannend"], ["Günstig", "Teuer"],
-      ["Hässlich", "Schön"], ["Kindisch", "Erwachsen"], ["Salzig", "Süß"],
-      ["Leichtes Essen", "Deftiges Essen"], ["Introvertiert", "Extrovertiert"], ["Kurzlebig", "Langlebig"],
-      ["Entspannend", "Stressig"], ["Unterschätzt", "Überschätzt"], ["Dystopie", "Utopie"],
-      ["Schlechter Film", "Guter Film"], ["Unbequem", "Bequem"], ["Normal", "Seltsam"],
-      ["Wenig Kalorien", "Viele Kalorien"], ["Vergangenheit", "Zukunft"], ["Chaos", "Ordnung"],
-      ["Eckig", "Rund"], ["Trocken", "Feucht"], ["Schwaches Tier", "Starkes Tier"],
-      ["Unwichtig", "Lebenswichtig"], ["Feigling", "Held"], ["Schwer zu finden", "Leicht zu finden"],
-      ["Müll", "Schatz"], ["Flexibel", "Starr"], ["Spontan", "Geplant"],
-      ["Klein", "Groß"], ["Dunkel", "Hell"], ["Sanft", "Aggressiv"],
-      ["Einzelgänger", "Rudeltier"], ["Verschwendung", "Sparen"], ["Lokal", "Global"],
-      ["Künstlich", "Natürlich"], ["Leicht zu lernen", "Schwer zu lernen"], ["Traurig", "Fröhlich"],
-      ["Kurz", "Lang"], ["Teilzeit", "Vollzeit"], ["Analog", "Digital"]
-    ];
+        // Spieler & Qualitäten
+        ["Unterschätzter Spieler", "Überschätzter Spieler"],
+        ["Schlechter Techniker", "Edeltechniker"],
+        ["Kreisliga-Niveau", "Weltklasse"],
+        ["Langsamer Spieler", "Extrem schneller Spieler"],
+        ["Chancentod", "Eiskalter Knipser"],
+        ["Schönwetterfußballer", "Kampfsau / Beißer"],
+        ["Führungsspieler", "Mitläufer"],
+        ["Verletzungsanfällig", "Nie verletzt"],
+        ["Ein-Fliegen-Torwart", "Hexer im Tor"],
+        ["Söldner", "Vereinslegende"],
+
+        // Taktik, Spielstil & Stimmung
+        ["Langweiliges Mauern (Bus parken)", "Spektakulärer Offensivfußball"],
+        ["Unverdienter Sieg", "Hochverdienter Sieg"],
+        ["Dreckiges 1:0", "Kantersieg (5:0)"],
+        ["Harmloses Foul", "Klar Rot"],
+        ["Totenstille im Stadion", "Hexenkessel / Wand"],
+        ["Harmloser Schuss", "Absoluter Kracher / Strahl"],
+        ["Faire Geste", "Unsportlicher Müll"],
+        ["Genialer Transfer", "Flop des Jahrzehnts"],
+
+        // Kultur, Fans & Nebengeräusche
+        ["Hässliches Trikot", "Wunderschönes Trikot"],
+        ["Eiskaltes Flaschenbier", "Warmes Dosenbier"],
+        ["Ekelhafte Stadionwurst", "Götterspeise Stadionwurst"],
+        ["Nutzerfreundliches Stadion", "Absolute Katastrophe für Auswärtsfans"],
+        ["Unsymphatischer Trainer", "Absoluter Sympathieträger"],
+        ["Fehlentscheidung des Jahres", "Perfekt gepfiffen"],
+        ["Guter Kommentator", "Muss man stummschalten"],
+        ["Sommerpause (Langweilig)", "WM/EM-Sommer (Beste Zeit)"],
+        ["Geldverbrennung", "Jeden Cent wert"],
+        ["Legendärer Jubel", "Peinlicher Jubel"]
+        ];
 
     let targetVal = 50;
     let currentPair = ["?", "?"];
