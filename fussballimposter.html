@@ -5,10 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>Fußball Imposter</title>
   <style>
-    * {
-      box-sizing: border-box;
-      touch-action: manipulation;
-    }
+    * { box-sizing: border-box; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
     body {
       background-color: #121212;
       color: #eee;
@@ -20,19 +17,9 @@
       margin: 0;
       padding: 20px;
     }
-    .back-btn {
-      color: #00ffcc;
-      text-decoration: none;
-      font-size: 16px;
-      align-self: flex-start;
-      margin-bottom: 15px;
-    }
-    h1 {
-      color: #00bcd4;
-      font-size: 26px;
-      margin-top: 0;
-      text-align: center;
-    }
+    .back-btn { color: #00ffcc; text-decoration: none; font-size: 16px; align-self: flex-start; margin-bottom: 15px; }
+    h1 { color: #00bcd4; font-size: 26px; margin-top: 0; text-align: center; }
+    h3 { margin: 0; text-align: center; }
     .card {
       background: #1e1e1e;
       border: 1px solid #333;
@@ -45,78 +32,71 @@
       flex-direction: column;
       gap: 15px;
     }
-    label {
-      font-size: 14px;
-      color: #aaa;
+    label.small { font-size: 13px; color: #aaa; display: block; margin-bottom: 6px; }
+    input[type="text"] {
+      width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #444;
+      background: #2a2a2a; color: white; font-size: 16px;
     }
-    input[type="number"], input[type="text"] {
-      width: 100%;
-      padding: 12px;
-      border-radius: 8px;
-      border: 1px solid #444;
-      background: #2a2a2a;
-      color: white;
-      font-size: 16px;
+    .section-label { font-size: 12px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; color: #888; margin-bottom: -6px; }
+
+    /* Segmented Control (iOS-Style) */
+    .segment { position: relative; display: flex; background: #2a2a2a; border: 1px solid #444; border-radius: 12px; padding: 4px; }
+    .segment-thumb {
+      position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc(50% - 4px);
+      background: #00bcd4; border-radius: 9px; transition: transform 0.25s ease;
     }
+    .segment.hard .segment-thumb { transform: translateX(100%); }
+    .segment button {
+      position: relative; flex: 1; background: none; border: none; color: #aaa;
+      padding: 11px 6px; font-size: 14px; font-weight: bold; cursor: pointer; transition: color 0.2s;
+    }
+    .segment button.active { color: #04212a; }
+
+    /* Toggle-Switch */
+    .toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: #282828; border: 1px solid #444; border-radius: 12px; padding: 14px; }
+    .toggle-row .t { font-weight: bold; font-size: 15px; }
+    .toggle-row .s { font-size: 12px; color: #aaa; margin-top: 2px; }
+    .switch { position: relative; width: 52px; height: 30px; flex-shrink: 0; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; inset: 0; background: #444; border-radius: 30px; cursor: pointer; transition: background 0.2s; }
+    .slider::before { content: ""; position: absolute; width: 24px; height: 24px; left: 3px; top: 3px; background: white; border-radius: 50%; transition: transform 0.2s; }
+    .switch input:checked + .slider { background: #28a745; }
+    .switch input:checked + .slider::before { transform: translateX(22px); }
+
+    /* Stepper */
+    .stepper { display: flex; align-items: center; justify-content: space-between; background: #282828; border: 1px solid #444; border-radius: 12px; padding: 8px; }
+    .step-btn { width: 48px; height: 48px; border-radius: 10px; border: none; background: #333; color: white; font-size: 26px; cursor: pointer; }
+    .step-btn:disabled { opacity: 0.35; }
+    .step-val { text-align: center; }
+    .step-val b { font-size: 28px; display: block; }
+    .step-val span { font-size: 12px; color: #aaa; }
+
     .btn {
-      background: #28a745;
-      color: white;
-      border: none;
-      padding: 14px;
-      font-size: 16px;
-      font-weight: bold;
-      border-radius: 10px;
-      cursor: pointer;
-      width: 100%;
-      transition: background 0.2s;
+      background: #28a745; color: white; border: none; padding: 14px; font-size: 16px;
+      font-weight: bold; border-radius: 10px; cursor: pointer; width: 100%; transition: transform 0.1s;
     }
-    .btn:active {
-      transform: scale(0.98);
-    }
-    .player-row {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      background: #282828;
-      padding: 12px;
-      border-radius: 10px;
-      border: 1px solid #444;
-    }
-    .player-btn {
-      background: #2e86de;
-      color: white;
-      border: none;
-      padding: 12px;
-      font-size: 16px;
-      font-weight: bold;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-    .start-player-btn {
-      background: #28a745 !important;
-    }
+    .btn:active { transform: scale(0.98); }
+    .btn.big { padding: 18px; font-size: 18px; box-shadow: 0 4px 14px rgba(40,167,69,0.4); }
+    .btn.ghost { background: none; color: #999; font-weight: normal; padding: 10px; }
+
+    /* Spielerkarten */
+    .player-row { display: flex; flex-direction: column; gap: 8px; background: #282828; padding: 12px; border-radius: 10px; border: 1px solid #444; }
+    .player-btn { background: #2e86de; color: white; border: none; padding: 12px; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer; }
+    .player-btn:disabled { opacity: 0.45; cursor: default; }
+    .player-btn.locked-other { background: #3a3a3a; }
     .role-output {
-      background: #121212;
-      border: 1px solid #555;
-      padding: 10px;
-      border-radius: 6px;
-      font-size: 15px;
-      text-align: center;
-      min-height: 42px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #00ffcc;
+      background: #121212; border: 1px solid #555; padding: 10px; border-radius: 6px; font-size: 15px;
+      text-align: center; min-height: 58px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #00ffcc; gap: 4px;
     }
+    .role-output.imposter { color: #ff5252; border-color: #ff5252; background: #2a1212; }
+    .role-output .name { font-size: 18px; font-weight: bold; }
+    .role-output .hint { color: #ffd54f; font-size: 14px; }
+    .role-output .tap { color: #888; font-size: 12px; }
     .start-info {
-      background: rgba(40, 167, 69, 0.2);
-      border: 1px solid #28a745;
-      color: #28a745;
-      padding: 12px;
-      border-radius: 8px;
-      text-align: center;
-      font-weight: bold;
+      background: rgba(40, 167, 69, 0.2); border: 1px solid #28a745; color: #28a745;
+      padding: 12px; border-radius: 8px; text-align: center; font-weight: bold;
     }
+    .intro { color: #aaa; font-size: 13px; text-align: center; margin: 0; }
   </style>
 </head>
 <body>
@@ -125,119 +105,253 @@
 
   <h1>⚽ Fußball Imposter</h1>
 
-  <div id="app" class="card">
-    <!-- Phasen werden dynamisch per JS eingefügt -->
-  </div>
+  <div id="app" class="card"></div>
 
   <script>
-    // Vollständige Spielerliste aus deinem Code
-    const fussballspieler = [
-      "Messi", "Cristiano Ronaldo", "Kylian Mbappé", "Erling Haaland", "Kevin De Bruyne",
-      "Neymar", "Mohamed Salah", "Harry Kane", "Robert Lewandowski", "Vinícius Júnior",
-      "Karim Benzema", "Luka Modrić", "Jude Bellingham", "Pedri", "Gavi", "Antoine Griezmann",
-      "João Félix", "Federico Valverde", "Bukayo Saka", "Phil Foden", "Zinédine Zidane", 
-      "Diego Maradona", "Pelé", "Ronaldinho", "Ronaldo Nazário", "David Beckham", "Thierry Henry", 
-      "Andrea Pirlo", "Xavi", "Andrés Iniesta", "Francesco Totti", "Iker Casillas", "Gianluigi Buffon", 
-      "Paolo Maldini", "Kaká", "Fernando Torres", "Wayne Rooney", "Frank Lampard", "Steven Gerrard", 
-      "Arjen Robben", "Philipp Lahm", "Bastian Schweinsteiger", "Michael Ballack", "Didier Drogba", 
-      "Zlatan Ibrahimović", "Lothar Matthäus", "Thomas Müller", "Manuel Neuer", "Marco Reus", 
-      "Jamal Musiala", "Florian Wirtz", "Franck Ribéry", "Toni Kroos", "Sergio Ramos", "Gerard Piqué"
+    /* ---------- Spielerlisten (n = Name, h = Tipp für den Imposter) ---------- */
+    const EINFACH = [
+      { n: "Messi", h: "Argentinien · Stürmer" },
+      { n: "Cristiano Ronaldo", h: "Portugal · Stürmer" },
+      { n: "Kylian Mbappé", h: "Frankreich · Stürmer" },
+      { n: "Erling Haaland", h: "Norwegen · Stürmer" },
+      { n: "Kevin De Bruyne", h: "Belgien · Mittelfeld" },
+      { n: "Neymar", h: "Brasilien · Stürmer" },
+      { n: "Mohamed Salah", h: "Ägypten · Flügel" },
+      { n: "Harry Kane", h: "England · Stürmer" },
+      { n: "Robert Lewandowski", h: "Polen · Stürmer" },
+      { n: "Karim Benzema", h: "Frankreich · Stürmer" },
+      { n: "Luka Modrić", h: "Kroatien · Mittelfeld" },
+      { n: "Jude Bellingham", h: "England · Mittelfeld" },
+      { n: "Zinédine Zidane", h: "Frankreich · Mittelfeld" },
+      { n: "Diego Maradona", h: "Argentinien · Offensiv" },
+      { n: "Pelé", h: "Brasilien · Stürmer" },
+      { n: "Ronaldinho", h: "Brasilien · Offensiv" },
+      { n: "David Beckham", h: "England · Mittelfeld" },
+      { n: "Zlatan Ibrahimović", h: "Schweden · Stürmer" },
+      { n: "Thomas Müller", h: "Deutschland · Offensiv" },
+      { n: "Manuel Neuer", h: "Deutschland · Torwart" },
+      { n: "Toni Kroos", h: "Deutschland · Mittelfeld" }
     ];
 
+    const SCHWER = [
+      { n: "Vinícius Júnior", h: "Brasilien · Flügel" },
+      { n: "Pedri", h: "Spanien · Mittelfeld" },
+      { n: "Gavi", h: "Spanien · Mittelfeld" },
+      { n: "Antoine Griezmann", h: "Frankreich · Offensiv" },
+      { n: "João Félix", h: "Portugal · Offensiv" },
+      { n: "Federico Valverde", h: "Uruguay · Mittelfeld" },
+      { n: "Bukayo Saka", h: "England · Flügel" },
+      { n: "Phil Foden", h: "England · Offensiv" },
+      { n: "Ronaldo Nazário", h: "Brasilien · Stürmer" },
+      { n: "Thierry Henry", h: "Frankreich · Stürmer" },
+      { n: "Andrea Pirlo", h: "Italien · Mittelfeld" },
+      { n: "Xavi", h: "Spanien · Mittelfeld" },
+      { n: "Andrés Iniesta", h: "Spanien · Mittelfeld" },
+      { n: "Francesco Totti", h: "Italien · Offensiv" },
+      { n: "Iker Casillas", h: "Spanien · Torwart" },
+      { n: "Gianluigi Buffon", h: "Italien · Torwart" },
+      { n: "Paolo Maldini", h: "Italien · Verteidiger" },
+      { n: "Kaká", h: "Brasilien · Offensiv" },
+      { n: "Fernando Torres", h: "Spanien · Stürmer" },
+      { n: "Wayne Rooney", h: "England · Stürmer" },
+      { n: "Frank Lampard", h: "England · Mittelfeld" },
+      { n: "Steven Gerrard", h: "England · Mittelfeld" },
+      { n: "Arjen Robben", h: "Niederlande · Flügel" },
+      { n: "Philipp Lahm", h: "Deutschland · Verteidiger" },
+      { n: "Bastian Schweinsteiger", h: "Deutschland · Mittelfeld" },
+      { n: "Michael Ballack", h: "Deutschland · Mittelfeld" },
+      { n: "Didier Drogba", h: "Elfenbeinküste · Stürmer" },
+      { n: "Lothar Matthäus", h: "Deutschland · Mittelfeld" },
+      { n: "Marco Reus", h: "Deutschland · Offensiv" },
+      { n: "Jamal Musiala", h: "Deutschland · Offensiv" },
+      { n: "Florian Wirtz", h: "Deutschland · Offensiv" },
+      { n: "Franck Ribéry", h: "Frankreich · Flügel" },
+      { n: "Sergio Ramos", h: "Spanien · Verteidiger" },
+      { n: "Gerard Piqué", h: "Spanien · Verteidiger" },
+      { n: "Raúl", h: "Spanien · Stürmer" },
+      { n: "Dennis Bergkamp", h: "Niederlande · Stürmer" },
+      { n: "Éric Cantona", h: "Frankreich · Stürmer" },
+      { n: "Gareth Bale", h: "Wales · Flügel" },
+      { n: "N'Golo Kanté", h: "Frankreich · Mittelfeld" },
+      { n: "Miroslav Klose", h: "Deutschland · Stürmer" },
+      { n: "Joshua Kimmich", h: "Deutschland · Mittelfeld" },
+      { n: "Lamine Yamal", h: "Spanien · Flügel" },
+      { n: "Rodri", h: "Spanien · Mittelfeld" },
+      { n: "Virgil van Dijk", h: "Niederlande · Verteidiger" }
+    ];
+
+    const MIN_PLAYERS = 3, MAX_PLAYERS = 12;
     const app = document.getElementById("app");
 
-    // Phase 1: Anzahl der Spieler wählen
-    function showCountStep() {
-      app.innerHTML = `
-        <label for="playerCount">Spieleranzahl (2 - 10):</label>
-        <input type="number" id="playerCount" value="3" min="2" max="10">
-        <button class="btn" onclick="submitCount()">Weiter 🎮</button>
-      `;
+    /* ---------- Zustand ---------- */
+    const settings = { difficulty: "einfach", hint: true, count: 4, names: [] };
+    let activeNames = [];
+    let round = null;
+    const used = { einfach: new Set(), schwer: new Set() };
+
+    // Einstellungen merken (falls der Browser es erlaubt)
+    try {
+      const saved = JSON.parse(localStorage.getItem("imposterSettings"));
+      if (saved) Object.assign(settings, saved);
+    } catch (e) {}
+    function save() {
+      try { localStorage.setItem("imposterSettings", JSON.stringify(settings)); } catch (e) {}
     }
 
-    function submitCount() {
-      const count = parseInt(document.getElementById("playerCount").value) || 3;
-      showNamesStep(count);
-    }
+    const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    const rand = (max) => Math.floor(Math.random() * max);
 
-    // Phase 2: Namen der Spieler eingeben
-    function showNamesStep(count) {
-      let inputsHtml = "";
-      for (let i = 0; i < count; i++) {
-        inputsHtml += `
-          <div>
-            <label>Spieler ${i + 1}:</label>
-            <input type="text" class="name-input" placeholder="Spieler ${i + 1}">
-          </div>
-        `;
+    /* ---------- Setup ---------- */
+    function showSetup() {
+      round = null;
+      const s = settings;
+      s.count = Math.min(MAX_PLAYERS, Math.max(MIN_PLAYERS, s.count));
+      while (s.names.length < s.count) s.names.push("");
+
+      let inputs = "";
+      for (let i = 0; i < s.count; i++) {
+        inputs += `<input type="text" class="name-input" data-i="${i}" maxlength="20"
+                    placeholder="Spieler ${i + 1}" value="${esc(s.names[i])}">`;
       }
 
       app.innerHTML = `
-        <h3>📝 Spielernamen</h3>
-        ${inputsHtml}
-        <button class="btn" onclick="submitNames()">Namen bestätigen ✅</button>
-      `;
-    }
-
-    function submitNames() {
-      const nameInputs = document.querySelectorAll(".name-input");
-      const namen = Array.from(nameInputs).map((input, idx) => input.value.trim() || `Spieler ${idx + 1}`);
-      startRound(namen);
-    }
-
-    // Phase 3: Rollenverteilung
-    function startRound(namen) {
-      const echterSpieler = fussballspieler[Math.floor(Math.random() * fussballspieler.length)];
-      const imposterIndex = Math.floor(Math.random() * namen.length);
-      const spielerStartIndex = Math.floor(Math.random() * namen.length);
-
-      let playersHtml = "";
-
-      namen.forEach((name, i) => {
-        const isStartPlayer = (i === spielerStartIndex);
-        const btnClass = isStartPlayer ? "player-btn start-player-btn" : "player-btn";
-        const role = (i === imposterIndex) ? "🕵️ Imposter" : `⚽ ${echterSpieler}`;
-
-        playersHtml += `
-          <div class="player-row">
-            <button class="${btnClass}" id="btn-${i}" onclick="handlePlayerClick(${i}, '${role}')">
-              ${name}
-            </button>
-            <div class="role-output" id="output-${i}">Tippe, um Rolle zu sehen</div>
-          </div>
-        `;
-      });
-
-      app.innerHTML = `
-        <div class="start-info">
-          🎉 Startspieler: <strong>${namen[spielerStartIndex]}</strong>
+        <div class="section-label">Schwierigkeit</div>
+        <div class="segment ${s.difficulty === "schwer" ? "hard" : ""}">
+          <div class="segment-thumb"></div>
+          <button data-diff="einfach" class="${s.difficulty === "einfach" ? "active" : ""}">Einfach</button>
+          <button data-diff="schwer" class="${s.difficulty === "schwer" ? "active" : ""}">Schwer</button>
         </div>
-        ${playersHtml}
-        <button class="btn" style="background:#555; margin-top:10px;" onclick="showCountStep()">Neue Runde 🔄</button>
+        <p class="intro">${s.difficulty === "einfach"
+          ? "Einfache und bekannte Spieler"
+          : "Schwere Spieler – nur für Kenner."}</p>
+
+        <div class="toggle-row">
+          <div>
+            <div class="t">Hinweis für den Imposter</div>
+            <div class="s">Imposter bekommt zufälligen Hinweis</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="hintToggle" ${s.hint ? "checked" : ""}>
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="section-label">Spieler</div>
+        <div class="stepper">
+          <button class="step-btn" id="minus" ${s.count <= MIN_PLAYERS ? "disabled" : ""}>−</button>
+          <div class="step-val"><b>${s.count}</b><span>Mitspieler</span></div>
+          <button class="step-btn" id="plus" ${s.count >= MAX_PLAYERS ? "disabled" : ""}>+</button>
+        </div>
+        ${inputs}
+
+        <button class="btn big" id="startBtn">Anpfiff! ⚽</button>
       `;
+
+      app.querySelectorAll(".segment button").forEach((b) =>
+        b.addEventListener("click", () => { captureNames(); s.difficulty = b.dataset.diff; save(); showSetup(); }));
+      document.getElementById("hintToggle").addEventListener("change", (e) => { s.hint = e.target.checked; save(); });
+      document.getElementById("minus").addEventListener("click", () => { captureNames(); s.count--; save(); showSetup(); });
+      document.getElementById("plus").addEventListener("click", () => { captureNames(); s.count++; save(); showSetup(); });
+      document.getElementById("startBtn").addEventListener("click", () => {
+        captureNames();
+        activeNames = Array.from({ length: s.count }, (_, i) => s.names[i].trim() || `Spieler ${i + 1}`);
+        save();
+        startRound();
+      });
     }
 
-    // Klick-Logik (1. Klick = Rolle sehen, 2. Klick = Verstecken & Button sperren)
-    const clickTracker = {};
+    function captureNames() {
+      document.querySelectorAll(".name-input").forEach((inp) => {
+        settings.names[Number(inp.dataset.i)] = inp.value;
+      });
+    }
 
-    function handlePlayerClick(index, role) {
-      if (!clickTracker[index]) clickTracker[index] = 0;
-      clickTracker[index]++;
+    /* ---------- Runde ---------- */
+    function startRound() {
+      const key = settings.difficulty;
+      const pool = key === "einfach" ? EINFACH : SCHWER;
 
-      const output = document.getElementById(`output-${index}`);
-      const btn = document.getElementById(`btn-${index}`);
+      // Spieler erst wiederholen, wenn alle einmal dran waren
+      let available = pool.filter((p) => !used[key].has(p.n));
+      if (available.length === 0) { used[key].clear(); available = pool; }
+      const player = available[rand(available.length)];
+      used[key].add(player.n);
 
-      if (clickTracker[index] === 1) {
-        output.innerHTML = `🎭 Deine Rolle:<br><strong>${role}</strong>`;
-      } else if (clickTracker[index] === 2) {
-        output.innerText = "✅ Gesichert";
-        btn.disabled = true;
-        btn.style.opacity = "0.5";
+      round = {
+        player,
+        imposter: rand(activeNames.length),
+        starter: rand(activeNames.length),
+        seen: activeNames.map(() => false),
+        open: null
+      };
+      renderRound();
+    }
+
+    function renderRound() {
+      const r = round;
+      const allSeen = r.seen.every(Boolean);
+
+      const rows = activeNames.map((name, i) => {
+        const isOpen = r.open === i;
+        const isImp = r.imposter === i;
+        const blocked = r.open !== null && !isOpen && !r.seen[i];
+        let out;
+
+        if (isOpen && isImp) {
+          out = `<div class="role-output imposter">
+                   <div class="name">🕵️ Du bist Imposter</div>
+                   ${settings.hint ? `<div class="hint">Tipp: ${esc(r.player.h)}</div>` : ""}
+                   <div class="tap">Tippen zum Verstecken</div>
+                 </div>`;
+        } else if (isOpen) {
+          out = `<div class="role-output">
+                   <div class="name">⚽ ${esc(r.player.n)}</div>
+                   <div class="tap">Tippen zum Verstecken</div>
+                 </div>`;
+        } else if (r.seen[i]) {
+          out = `<div class="role-output">✅ Gesichert</div>`;
+        } else {
+          out = `<div class="role-output">${blocked ? "Erst andere Karte verstecken" : "Tippe, um Rolle zu sehen"}</div>`;
+        }
+
+        return `
+          <div class="player-row">
+            <button class="player-btn ${blocked ? "locked-other" : ""}" data-i="${i}"
+                    ${r.seen[i] || blocked ? "disabled" : ""}>${esc(name)}</button>
+            ${out}
+          </div>`;
+      }).join("");
+
+      app.innerHTML = `
+        <h3>🎭 Rollen aufdecken</h3>
+        <p class="intro">Tippe auf deinen Namen, merke dir die Rolle und tippe nochmal, um sie zu verstecken.</p>
+        ${allSeen ? `<div class="start-info">🎉 Startspieler: <strong>${esc(activeNames[r.starter])}</strong></div>` : ""}
+        ${rows}
+        <button class="btn big" id="rematch">🔄 Neue Runde</button>
+        <button class="btn ghost" id="toSetup">Einstellungen ändern</button>
+      `;
+
+      app.querySelectorAll(".player-btn").forEach((b) =>
+        b.addEventListener("click", () => handleClick(Number(b.dataset.i))));
+      document.getElementById("rematch").addEventListener("click", startRound);   // gleiche Spieler & Einstellungen
+      document.getElementById("toSetup").addEventListener("click", showSetup);
+    }
+
+    // 1. Klick = Rolle sehen, 2. Klick = verstecken & Karte sperren
+    function handleClick(i) {
+      if (round.seen[i]) return;
+      if (round.open === i) {
+        round.seen[i] = true;
+        round.open = null;
+      } else if (round.open === null) {
+        round.open = i;
+      } else {
+        return;
       }
+      renderRound();
     }
 
-    // Starten
-    showCountStep();
+    showSetup();
   </script>
 </body>
 </html>
