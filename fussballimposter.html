@@ -112,8 +112,8 @@
     /* ---------- Spielerlisten kommen aus spieler.js ---------- */
     const toList = (arr) => arr.map(([n, ...h]) => ({ n, h }));
     const EINFACH = toList(SPIELER_EINFACH);
-    const SCHWER = toList(SPIELER_SCHWER);
-
+    const SCHWER = toList([...SPIELER_EINFACH, ...SPIELER_SCHWER]);
+    
     const MIN_PLAYERS = 3, MAX_PLAYERS = 12;
     const app = document.getElementById("app");
 
