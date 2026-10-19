@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <!-- Verhindert, dass die Seite auf dem iPhone gezoomt werden kann -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Mein iPhone Spiel</title>
+  <style>
+    * {
+      touch-action: manipulation;
+    }
+    body {
+      background-color: #1a1a1a;
+      color: white;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      user-select: none;
+    }
+    h1 {
+      margin-bottom: 10px;
+      font-size: 24px;
+    }
+    #score {
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+    canvas {
+      background-color: #000;
+      border: 3px solid #00ffcc;
+      box-shadow: 0 0 15px rgba(0, 255, 204, 0.3);
+      border-radius: 8px;
+    }
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(3, 60px);
+      grid-template-rows: repeat(3, 60px);
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .btn {
+      background: #333;
+      border: 2px solid #00ffcc;
+      color: #00ffcc;
+      font-size: 24px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    .btn:active {
+      background: #00ffcc;
+      color: #000;
+    }
+    .up { grid-column: 2; grid-row: 1; }
+    .left { grid-column: 1; grid-row: 2; }
+    .right { grid-column: 3; grid-row: 2; }
+    .down { grid-column: 2; grid-row: 3; }
+  </style>
+</head>
+<body>
+
+  <h1>Snake Game</h1>
+  <div id="score">Punkte: 0</div>
+  <canvas id="gameCanvas" width="300" height="300"></canvas>
+
+  <!-- Touch-Steuerung für das iPhone -->
+  <div class="controls">
+    <div class="btn up" onclick="setDir('UP')">▲</div>
+    <div class="btn left" onclick="setDir('LEFT')">◀</div>
+    <div class="btn right" onclick="setDir('RIGHT')">▶</div>
+    <div class="btn down" onclick="setDir('DOWN')">▼</div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    const grid = 15;
+    let score = 0;
+
+    let snake = [{ x: 150, y: 150 }];
+    let food = { x: 0, y: 0 };
+    let dir = "RIGHT";
+    let nextDir = "RIGHT";
+
+    function placeFood() {
+      food.x = Math.floor(Math.random() * (canvas.width / grid)) * grid;
+      food.y = Math.floor(Math.random() * (canvas.height / grid)) * grid;
+    }
+
+    function setDir(newDir) {
+      if (newDir === "UP" && dir !== "DOWN") nextDir = "UP";
+      if (newDir === "DOWN" && dir !== "UP") nextDir = "DOWN";
+      if (newDir === "LEFT" && dir !== "RIGHT") nextDir = "LEFT";
+      if (newDir === "RIGHT" && dir !== "LEFT") nextDir = "RIGHT";
+    }
+
+    function gameLoop() {
+      dir = nextDir;
+      let head = { ...snake[0] };
+
+      if (dir === "UP") head.y -= grid;
+      if (dir === "DOWN") head.y += grid;
+      if (dir === "LEFT") head.x -= grid;
+      if (dir === "RIGHT") head.x += grid;
+
+      // Wand-Kollision (Game Over / Reset)
+      if (head.x < 0 || head.x >= canvas.width || head.y < 0 || head.y >= canvas.height) {
+        alert("Game Over! Punkte: " + score);
+        snake = [{ x: 150, y: 150 }];
+        dir = "RIGHT";
+        nextDir = "RIGHT";
+        score = 0;
+        document.getElementById("score").innerText = "Punkte: " + score;
+        placeFood();
+        return;
+      }
+
+      // Körper-Kollision
+      for (let i = 0; i < snake.length; i++) {
+        if (head.x === snake[i].x && head.y === snake[i].y) {
+          alert("Game Over! Punkte: " + score);
+          snake = [{ x: 150, y: 150 }];
+          dir = "RIGHT";
+          nextDir = "RIGHT";
+          score = 0;
+          document.getElementById("score").innerText = "Punkte: " + score;
+          placeFood();
+          return;
+        }
+      }
+
+      snake.unshift(head);
+
+      // Futter essen
+      if (head.x === food.x && head.y === food.y) {
+        score += 10;
+        document.getElementById("score").innerText = "Punkte: " + score;
+        placeFood();
+      } else {
+        snake.pop();
+      }
+
+      // Zeichnen
+      ctx.fillStyle = "#000";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.fillStyle = "#ff0055";
+      ctx.fillRect(food.x, food.y, grid - 1, grid - 1);
+
+      ctx.fillStyle = "#00ffcc";
+      snake.forEach(part => {
+        ctx.fillRect(part.x, part.y, grid - 1, grid - 1);
+      });
+    }
+
+    placeFood();
+    setInterval(gameLoop, 120);
+  </script>
+</body>
+</html>
