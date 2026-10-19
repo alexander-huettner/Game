@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>QuizBoard / Jeopardy</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      touch-action: manipulation;
+    }
+    body {
+      background-color: #0d0e15;
+      color: #eee;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 15px;
+    }
+    .back-btn {
+      color: #00ffcc;
+      text-decoration: none;
+      font-size: 16px;
+      align-self: flex-start;
+      margin-bottom: 10px;
+    }
+    h1 {
+      color: #ffcc00;
+      font-size: 24px;
+      margin: 0 0 15px 0;
+      text-align: center;
+      text-shadow: 0 0 10px rgba(255, 204, 0, 0.4);
+    }
+    .score-board {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      width: 100%;
+      max-width: 500px;
+      margin-bottom: 15px;
+      padding-bottom: 5px;
+    }
+    .team-card {
+      background: #181a24;
+      border: 1px solid #333;
+      border-radius: 10px;
+      padding: 10px;
+      min-width: 90px;
+      text-align: center;
+      flex: 1;
+    }
+    .team-card.active {
+      border: 2px solid gold;
+      background: #000044;
+      box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+    }
+    .team-name {
+      font-size: 12px;
+      color: #aaa;
+    }
+    .team-score {
+      font-size: 18px;
+      font-weight: bold;
+      color: #27ae60;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      width: 100%;
+      max-width: 500px;
+    }
+    .cat-btn {
+      background: #000055;
+      color: gold;
+      font-weight: bold;
+      font-size: 12px;
+      padding: 12px 4px;
+      border-radius: 8px;
+      border: 1px solid #0000aa;
+      text-align: center;
+      text-transform: uppercase;
+    }
+    .val-btn {
+      background: #060ce9;
+      color: white;
+      font-weight: bold;
+      font-size: 18px;
+      padding: 16px 0;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+    }
+    .val-btn.lvl-1000 {
+      background: #8e44ad;
+    }
+    .val-btn.played {
+      background: #222;
+      color: #555;
+      cursor: default;
+    }
+    .card-modal {
+      background: #181a24;
+      border: 2px solid gold;
+      border-radius: 16px;
+      padding: 20px;
+      width: 100%;
+      max-width: 500px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      text-align: center;
+    }
+    .question-box {
+      background: linear-gradient(135deg, #060ce9, #000033);
+      padding: 20px;
+      border-radius: 12px;
+      border: 1px solid gold;
+      font-size: 18px;
+      font-weight: bold;
+      line-height: 1.4;
+    }
+    .answer-box {
+      background: #27ae60;
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: bold;
+      border: 1px solid gold;
+    }
+    .btn {
+      border: none;
+      padding: 12px;
+      font-size: 16px;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+      color: white;
+      width: 100%;
+    }
+    .btn-warn { background: #f39c12; }
+    .btn-success { background: #27ae60; }
+    .btn-primary { background: #2980b9; }
+    .team-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .team-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #222;
+      padding: 8px 12px;
+      border-radius: 8px;
+    }
+    .score-btns {
+      display: flex;
+      gap: 8px;
+    }
+    .btn-sm {
+      padding: 6px 12px;
+      font-size: 14px;
+      border-radius: 6px;
+      border: none;
+      font-weight: bold;
+      color: white;
+    }
+    .btn-plus { background: #27ae60; }
+    .btn-minus { background: #e74c3c; }
+  </style>
+</head>
+<body>
+
+  <a href="index.html" class="back-btn">← Zurück zum Menü</a>
+
+  <h1>🏆 QuizBoard</h1>
+
+  <div id="app" style="width: 100%; max-width: 500px;"></div>
+
+  <script>
+    const questionsDatabase = {
+      "Fußball": {
+        "100": { frage: "Welches Land gewann die Fußball-Weltmeisterschaft 2014?", antwort: "Deutschland" },
+        "200": { frage: "Wie viele Spieler stehen pro Mannschaft auf dem Feld?", antwort: "11 Spieler" },
+        "300": { frage: "Welcher Verein wird als 'Die Königlichen' bezeichnet?", antwort: "Real Madrid" },
+        "500": { frage: "Wer hält den Rekord für die meisten Tore in einem Kalenderjahr (91 Tore)?", antwort: "Lionel Messi" },
+        "1000": { frage: "In welchem Jahr wurde die deutsche Bundesliga gegründet?", antwort: "1963" }
+      },
+      "Geografie": {
+        "100": { frage: "Was ist die Hauptstadt von Frankreich?", antwort: "Paris" },
+        "200": { frage: "Welcher ist der längste Fluss der Welt?", antwort: "Nil (oder Amazonas)" },
+        "300": { frage: "Auf welchem Kontinent liegt Ägypten?", antwort: "Afrika" },
+        "500": { frage: "Wie heißt die Hauptstadt von Australien?", antwort: "Canberra" },
+        "1000": { frage: "Welches Land hat weltweit die meisten Zeitzonen?", antwort: "Frankreich (12 inkl. Überseegebiete)" }
+      },
+      "Allgemeinwissen": {
+        "100": { frage: "Wie viele Tage hat ein Schaltjahr?", antwort: "366 Tage" },
+        "200": { frage: "Aus wie vielen Farben besteht ein Regenbogen?", antwort: "7 Farben" },
+        "300": { frage: "Wie heißt das chemische Element mit dem Symbol 'O'?", antwort: "Sauerstoff" },
+        "500": { frage: "Wer malte die berühmte 'Mona Lisa'?", antwort: "Leonardo da Vinci" },
+        "1000": { frage: "Was ist die härteste natürliche Substanzen der Welt?", antwort: "Diamant" }
+      }
+    };
+
+    const categories = Object.keys(questionsDatabase);
+    const levels = [100, 200, 300, 500, 1000];
+
+    let teams = [];
+    let currentTurnIdx = 0;
+    let played = new Set();
+    let currentQ = null;
+    let curCat = "";
+    let curLvl = 0;
+    let showAnswer = false;
+
+    const app = document.getElementById("app");
+
+    function renderSetup() {
+      app.innerHTML = `
+        <div class="card-modal">
+          <h2>Teams erstellen</h2>
+          <div style="display:flex; justify-content:center; align-items:center; gap:15px;">
+            <button class="btn btn-primary" style="width:50px;" onclick="changeTeamCount(-1)">-</button>
+            <span id="team-count-lbl" style="font-weight:bold; font-size:18px;">3 Teams</span>
+            <button class="btn btn-primary" style="width:50px;" onclick="changeTeamCount(1)">+</button>
+          </div>
+          <div id="team-inputs" style="display:flex; flex-direction:column; gap:8px;"></div>
+          <button class="btn btn-success" onclick="startGame()">SPIEL STARTEN 🚀</button>
+        </div>
+      `;
+      updateInputs(3);
+    }
+
+    let teamCount = 3;
+    function changeTeamCount(delta) {
+      teamCount = Math.max(1, Math.min(6, teamCount + delta));
+      document.getElementById("team-count-lbl").innerText = `${teamCount} Teams`;
+      updateInputs(teamCount);
+    }
+
+    function updateInputs(count) {
+      const container = document.getElementById("team-inputs");
+      let html = "";
+      for (let i = 0; i < count; i++) {
+        html += `<input type="text" id="t-input-${i}" placeholder="Team ${i+1}" style="padding:10px; border-radius:6px; border:1px solid #444; background:#222; color:white;">`;
+      }
+      container.innerHTML = html;
+    }
+
+    function startGame() {
+      teams = [];
+      for (let i = 0; i < teamCount; i++) {
+        const val = document.getElementById(`t-input-${i}`).value.trim();
+        teams.push({ name: val || `Team ${i+1}`, score: 0 });
+      }
+      renderBoard();
+    }
+
+    function getScoreBoardHtml() {
+      let cards = teams.map((t, i) => `
+        <div class="team-card ${i === currentTurnIdx ? 'active' : ''}">
+          <div class="team-name">${t.name}</div>
+          <div class="team-score">${t.score}</div>
+        </div>
+      `).join("");
+      return `<div class="score-board">${cards}</div>`;
+    }
+
+    function renderBoard() {
+      let gridHtml = categories.map(c => `<div class="cat-btn">${c}</div>`).join("");
+
+      levels.forEach(lvl => {
+        categories.forEach(cat => {
+          const key = `${cat}-${lvl}`;
+          const isPlayed = played.has(key);
+          const lvlClass = lvl === 1000 ? 'lvl-1000' : '';
+          
+          gridHtml += `
+            <button class="val-btn ${lvlClass} ${isPlayed ? 'played' : ''}" 
+              ${isPlayed ? 'disabled' : ''} 
+              onclick="openQuestion('${cat}', ${lvl})">
+              ${isPlayed ? 'X' : lvl}
+            </button>
+          `;
+        });
+      });
+
+      app.innerHTML = `
+        ${getScoreBoardHtml()}
+        <div style="text-align:center; color:gold; margin-bottom:10px;">🌟 <strong>${teams[currentTurnIdx].name}</strong> wählt!</div>
+        <div class="grid">${gridHtml}</div>
+      `;
+    }
+
+    function openQuestion(cat, lvl) {
+      curCat = cat;
+      curLvl = lvl;
+      played.add(`${cat}-${lvl}`);
+      currentQ = questionsDatabase[cat][lvl];
+      showAnswer = false;
+      renderQuestionScreen();
+    }
+
+    function renderQuestionScreen() {
+      let teamControlsHtml = teams.map((t, i) => {
+        const isActive = (i === currentTurnIdx);
+        const pVal = isActive ? curLvl : Math.floor(curLvl / 2);
+        return `
+          <div class="team-row">
+            <span><strong>${t.name}</strong></span>
+            <div class="score-btns">
+              <button class="btn-sm btn-plus" onclick="addScore(${i}, ${pVal})">+${pVal}</button>
+              <button class="btn-sm btn-minus" onclick="addScore(${i}, -${pVal})">-${pVal}</button>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      app.innerHTML = `
+        ${getScoreBoardHtml()}
+        <div class="card-modal">
+          <h3 style="color:gold; margin:0;">${curCat} (${curLvl} Pkt)</h3>
+          <div class="question-box">${currentQ.frage}</div>
+          
+          ${showAnswer ? `<div class="answer-box">LÖSUNG: ${currentQ.antwort}</div>` : ''}
+
+          <div class="team-controls">${teamControlsHtml}</div>
+
+          ${!showAnswer ? 
+            `<button class="btn btn-warn" onclick="toggleAnswer()">ANTWORT PRÜFEN 👁️</button>` : 
+            `<button class="btn btn-primary" onclick="finishQuestion()">RUNDE BEENDEN 🚀</button>`
+          }
+        </div>
+      `;
+    }
+
+    function toggleAnswer() {
+      showAnswer = true;
+      renderQuestionScreen();
+    }
+
+    function addScore(teamIdx, pts) {
+      teams[teamIdx].score += pts;
+      renderQuestionScreen();
+    }
+
+    function finishQuestion() {
+      currentTurnIdx = (currentTurnIdx + 1) % teams.length;
+      renderBoard();
+    }
+
+    renderSetup();
+  </script>
+</body>
+</html>
