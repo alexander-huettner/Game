@@ -154,7 +154,7 @@
       ["Wenig Kalorien", "Viele Kalorien"], ["Vergangenheit", "Zukunft"], ["Chaos", "Ordnung"],
       ["Eckig", "Rund"], ["Trocken", "Feucht"], ["Schwaches Tier", "Starkes Tier"],
       ["Unwichtig", "Lebenswichtig"], ["Feigling", "Held"], ["Schwer zu finden", "Leicht zu finden"],
-      ["Müll", "Schatz"], ["Flexibel", "Starr"], ["Spontan", "Geplant"],
+      ["Müll", "Schatz"], ["Flexibel", "Starr"], ["Spontan", "Geplanned"],
       ["Klein", "Groß"], ["Dunkel", "Hell"], ["Sanft", "Aggressiv"],
       ["Einzelgänger", "Rudeltier"], ["Verschwendung", "Sparen"], ["Lokal", "Global"],
       ["Künstlich", "Natürlich"], ["Leicht zu lernen", "Schwer zu lernen"], ["Traurig", "Fröhlich"],
@@ -183,7 +183,6 @@
     }
 
     function valToRad(val) {
-      // 0 = Math.PI (Links), 100 = 0 (Rechts)
       return Math.PI - ((val / 100) * Math.PI);
     }
 
@@ -204,7 +203,6 @@
       ctx.stroke();
 
       if (showTarget) {
-        // Ziel-Sektoren zeichnen
         const tRad = valToRad(targetVal);
 
         // 2 Punkte Zone (16 Einheiten breit)
@@ -248,7 +246,6 @@
 
       ctx.beginPath();
       ctx.moveTo(cx, cy);
-      // Canvas Bögen laufen im Uhrzeigersinn, wir spiegeln für mathematische Winkel
       ctx.arc(cx, cy, radius - 2, 2 * Math.PI - endAngle, 2 * Math.PI - startAngle, false);
       ctx.closePath();
       ctx.fillStyle = color;
@@ -283,11 +280,6 @@
         else if (diff <= 4) { pts = 3; msg = "SUPER GETROFFEN!"; color = "#ffa500"; }
         else if (diff <= 8) { pts = 2; msg = "TREFFER!"; color = "#ff4d4d"; }
 
-        if (pts > 0 && phase === "result_first") {
-          totalScore += pts;
-          document.getElementById("score").innerText = totalScore;
-        }
-
         statusEl.innerHTML = `<span style="color:${color};">${msg} (+${pts} Pkt)</span>`;
         slider.disabled = true;
         btnContainer.innerHTML = `
@@ -303,9 +295,17 @@
     }
 
     function goToResultPhase() {
-      phase = "result_first";
-      updateUI();
+      const diff = Math.abs(slider.value - targetVal);
+      let pts = 0;
+      if (diff <= 2) pts = 4;
+      else if (diff <= 4) pts = 3;
+      else if (diff <= 8) pts = 2;
+
+      totalScore += pts;
+      document.getElementById("score").innerText = totalScore;
+
       phase = "result";
+      updateUI();
     }
 
     slider.addEventListener("input", () => {
@@ -317,5 +317,3 @@
     // Erste Runde beim Laden starten
     newRound();
   </script>
-</body>
-</html>
