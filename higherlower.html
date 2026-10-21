@@ -1,1 +1,243 @@
-fetch('https://api.bigballsdata.com/v1/players?limit=2',{headers:{'x-api-key':'bbs_live_000001owTUHBJUcd4VPLEb5o7Ln1l0U20xj5zQDeT0wAL0ub'}}).then(r=>r.text()).then(console.log).catch(console.error)
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Higher / Lower Strahl</title>
+<style>
+  * { box-sizing: border-box; touch-action: manipulation; }
+  body {
+    background-color: #121212; color: white;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    display: flex; flex-direction: column; align-items: center;
+    min-height: 100vh; margin: 0; padding: 20px;
+  }
+  .back { align-self: flex-start; color: #888; text-decoration: none; font-size: 14px; }
+  h1 {
+    font-size: 26px; margin: 15px 0 5px; text-align: center;
+    background: linear-gradient(45deg, #00ffcc, #0077ff);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .subtitle { color: #888; font-size: 14px; margin: 0 0 12px; text-align: center; }
+  .chips { display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; justify-content: center; max-width: 440px; }
+  .chip { padding: 8px 13px; border-radius: 18px; border: 2px solid #333; background: #1e1e1e; color: #aaa; font-size: 14px; cursor: pointer; }
+  .chip.active { border-color: #00ffcc; color: #00ffcc; }
+  #status { color: #aaa; font-size: 14px; text-align: center; margin: 6px 0; min-height: 18px; }
+  #game { width: 100%; max-width: 440px; display: flex; flex-direction: column; align-items: center; }
+  .scores { color: #aaa; font-size: 15px; margin: 8px 0 12px; }
+  .scores b { color: #00ffcc; font-size: 18px; }
+  .duel { display: flex; align-items: stretch; gap: 8px; width: 100%; }
+  .card {
+    flex: 1; background: #1e1e1e; border: 2px solid #333; border-radius: 16px;
+    padding: 14px 8px; text-align: center; display: flex; flex-direction: column;
+    justify-content: center; gap: 8px; min-height: 150px; min-width: 0;
+  }
+  .card.known { border-color: #00ffcc; }
+  .card .name { font-size: 16px; font-weight: 600; display: flex; flex-direction: column; align-items: center; gap: 4px; word-break: break-word; }
+  .card .logo { width: 36px; height: 36px; object-fit: contain; }
+  .card .lg { font-size: 11px; color: #888; font-weight: 400; }
+  .card .val { font-size: 20px; font-weight: 700; color: #00ffcc; }
+  .card.unknown .val { color: #ffcc00; }
+  .card.right { border-color: #2ecc71; }
+  .card.wrong { border-color: #e74c3c; }
+  .vs { align-self: center; color: #555; font-weight: 700; font-size: 13px; }
+  .buttons { display: flex; gap: 10px; width: 100%; margin-top: 15px; }
+  button.act {
+    flex: 1; padding: 16px; font-size: 17px; font-weight: 600; border: none;
+    border-radius: 14px; color: white; cursor: pointer;
+  }
+  #higher { background: #2ecc71; }
+  #lower { background: #e74c3c; }
+  button.act:disabled { opacity: 0.4; }
+  #restart { background: linear-gradient(45deg, #00ffcc, #0077ff); color: #121212; margin-top: 15px; width: 100%; flex: none; }
+  #message { min-height: 28px; margin: 14px 0 6px; text-align: center; font-size: 15px; color: #ddd; }
+  .ray-wrap { width: 100%; background: #1e1e1e; border: 2px solid #333; border-radius: 16px; padding: 12px 0; margin-top: 6px; }
+  .ray-title { text-align: center; color: #888; font-size: 12px; margin-bottom: 4px; }
+  .ray { position: relative; height: 120px; margin: 0 26px; }
+  .line { position: absolute; left: 0; right: 0; top: 59px; height: 3px; background: linear-gradient(90deg, #0077ff, #00ffcc); border-radius: 2px; }
+  .tick { position: absolute; top: 68px; transform: translateX(-50%); font-size: 10px; color: #666; }
+  .dot { position: absolute; top: 54px; width: 13px; height: 13px; margin-left: -6px; border-radius: 50%; background: #aaa; border: 2px solid #121212; }
+  .dot.last { background: #ffcc00; }
+  .lbl { position: absolute; transform: translateX(-50%); font-size: 11px; color: #ddd; white-space: nowrap; }
+  .lbl.up { top: 30px; }
+  .lbl.down { top: 90px; }
+  .hint { color: #555; font-size: 11px; text-align: center; margin-top: 14px; }
+</style>
+</head>
+<body>
+<a class="back" href="index.html">← Zurück</a>
+<h1>📈 Higher / Lower Strahl</h1>
+<p class="subtitle" id="subtitle">Live-Daten der aktuellen Saison</p>
+<div class="chips" id="metricChips"></div>
+<div class="chips" id="leagueChips"></div>
+<div id="status"></div>
+
+<div id="game" hidden>
+  <div class="scores">Serie: <b id="streak">0</b> · Rekord: <b id="best">0</b></div>
+  <div class="duel">
+    <div class="card known" id="curCard"><div class="name" id="curName"></div><div class="val" id="curVal"></div></div>
+    <div class="vs">VS</div>
+    <div class="card unknown" id="nextCard"><div class="name" id="nextName"></div><div class="val" id="nextVal">?</div></div>
+  </div>
+  <div class="buttons">
+    <button class="act" id="higher">⬆ Höher</button>
+    <button class="act" id="lower">⬇ Niedriger</button>
+  </div>
+  <div id="message"></div>
+  <button class="act" id="restart" hidden>Nochmal spielen</button>
+  <div class="ray-wrap">
+    <div class="ray-title" id="rayTitle">Strahl der bisherigen Werte</div>
+    <div class="ray" id="ray"></div>
+  </div>
+  <p class="hint">Daten: BigBallsData API · Tabellenstand der aktuellen Saison</p>
+</div>
+
+<script src="bbs.js"></script>
+<script>
+const METRICS = {
+  goals:   { label: 'Tore',      f: r => r.points_for },
+  against: { label: 'Gegentore', f: r => r.points_against },
+  wins:    { label: 'Siege',     f: r => r.wins },
+  points:  { label: 'Punkte',    f: r => r.wins * 3 + r.ties }
+};
+let teams = [], scope = 'Alle', metric = 'goals', base = [], pool = [];
+let cur = null, next = null, streak = 0, best = 0, placed = [], locked = false, axisMax = 10, gid = 0;
+
+const $ = id => document.getElementById(id);
+const val = p => METRICS[metric].f(p.row);
+const fmt = v => v + ' ' + METRICS[metric].label;
+const short = p => p.name.length > 13 ? p.name.slice(0, 12) + '…' : p.name;
+const isNum = x => typeof x === 'number' && isFinite(x);
+
+function loadBest() { best = 0; try { best = parseInt(localStorage.getItem('hlBest_' + metric)) || 0; } catch (e) {} }
+
+function drawTeam() {
+  if (!pool.length) pool = BBS.shuffle(base.slice());
+  let p = pool.pop();
+  if (cur && p === cur && pool.length) { pool.unshift(p); p = pool.pop(); }
+  return p;
+}
+
+function fillName(el, p) {
+  el.innerHTML = '';
+  if (p.logo) {
+    const im = new Image();
+    im.src = p.logo; im.alt = ''; im.className = 'logo';
+    im.onerror = () => im.remove();
+    el.appendChild(im);
+  }
+  const n = document.createElement('div'); n.textContent = p.name; el.appendChild(n);
+  const l = document.createElement('div'); l.className = 'lg'; l.textContent = p.league; el.appendChild(l);
+}
+
+function pct(v) { return Math.min(100, Math.max(0, v / axisMax * 100)); }
+
+function renderRay() {
+  let h = '<div class="line"></div>';
+  const step = axisMax <= 25 ? 5 : 10;
+  for (let t = 0; t <= axisMax; t += step) h += `<span class="tick" style="left:${pct(t)}%">${t}</span>`;
+  placed.forEach((p, i) => {
+    h += `<span class="dot ${i === placed.length - 1 ? 'last' : ''}" style="left:${pct(val(p))}%"></span>`;
+    if (i >= placed.length - 6) h += `<span class="lbl ${i % 2 === 0 ? 'up' : 'down'}" style="left:${pct(val(p))}%">${BBS.esc(short(p))}</span>`;
+  });
+  $('ray').innerHTML = h;
+}
+
+function showRound() {
+  fillName($('curName'), cur);
+  $('curVal').textContent = fmt(val(cur));
+  fillName($('nextName'), next);
+  $('nextVal').textContent = '?';
+  $('curCard').className = 'card known';
+  $('nextCard').className = 'card unknown';
+  $('streak').textContent = streak;
+  $('best').textContent = best;
+  renderRay();
+}
+
+function renderChips() {
+  BBS.chips($('metricChips'), Object.keys(METRICS).map(k => ({ value: k, label: METRICS[k].label })), metric, m => { metric = m; renderChips(); start(); });
+  const leagues = ['Alle'].concat(Array.from(new Set(teams.map(t => t.league))));
+  BBS.chips($('leagueChips'), leagues.map(l => ({ value: l, label: l === 'Alle' ? 'Alle Ligen' : l })), scope, s => { scope = s; renderChips(); start(); });
+  $('subtitle').textContent = `Hat der nächste Verein mehr oder weniger ${METRICS[metric].label}? (aktuelle Saison)`;
+  $('rayTitle').textContent = `Strahl der bisherigen Werte (${METRICS[metric].label})`;
+}
+
+function start() {
+  gid++;
+  base = teams.filter(t => (scope === 'Alle' || t.league === scope) && isNum(val(t)));
+  if (base.length < 2) { $('status').textContent = 'Zu wenige Teams für diese Auswahl.'; $('game').hidden = true; return; }
+  $('status').textContent = '';
+  $('game').hidden = false;
+  loadBest();
+  axisMax = Math.max(5, Math.ceil(Math.max.apply(null, base.map(val)) / 5) * 5);
+  pool = BBS.shuffle(base.slice());
+  streak = 0; placed = []; locked = false; cur = null;
+  cur = drawTeam(); next = drawTeam();
+  placed.push(cur);
+  $('message').textContent = '';
+  $('restart').hidden = true;
+  $('higher').disabled = false; $('lower').disabled = false;
+  showRound();
+}
+
+function guess(higher) {
+  if (locked) return;
+  locked = true;
+  const myGid = gid;
+  $('higher').disabled = true; $('lower').disabled = true;
+  const cv = val(cur), nv = val(next);
+  $('nextVal').textContent = fmt(nv);
+  const ok = nv === cv || (higher ? nv > cv : nv < cv);
+  placed.push(next);
+  if (ok) {
+    streak++;
+    if (streak > best) { best = streak; try { localStorage.setItem('hlBest_' + metric, best); } catch (e) {} }
+    $('nextCard').className = 'card right';
+    $('message').textContent = nv === cv ? 'Gleicher Wert – zählt als richtig! ✅' : 'Richtig! ✅';
+    $('streak').textContent = streak; $('best').textContent = best;
+    renderRay();
+    setTimeout(() => {
+      if (myGid !== gid) return;
+      cur = next; next = drawTeam();
+      locked = false;
+      $('higher').disabled = false; $('lower').disabled = false;
+      $('message').textContent = '';
+      showRound();
+    }, 1300);
+  } else {
+    $('nextCard').className = 'card wrong';
+    $('message').textContent = `Falsch! ${next.name} hat ${fmt(nv)}. Deine Serie: ${streak}`;
+    renderRay();
+    $('restart').hidden = false;
+  }
+}
+
+async function init() {
+  if (!BBS.getKey()) { BBS.promptKey(init); return; }
+  $('status').textContent = 'Lade Tabellen …';
+  try {
+    const res = await Promise.allSettled(BBS.LEAGUES.map(async l => ({ l: l, rows: await BBS.standings(l) })));
+    const ok = res.filter(r => r.status === 'fulfilled');
+    if (!ok.length) throw res[0].reason;
+    teams = [];
+    ok.forEach(r => r.value.rows.forEach(row => {
+      if (row && row.team_name && isNum(row.wins) && isNum(row.ties) && isNum(row.points_for) && isNum(row.points_against)) {
+        teams.push({ name: row.team_name, league: r.value.l, logo: row.logo_url || null, row: row });
+      }
+    }));
+    if (!teams.length) { $('status').textContent = 'Keine Tabellendaten gefunden.'; return; }
+    renderChips();
+    start();
+  } catch (e) {
+    BBS.showError($('status'), e, init);
+  }
+}
+
+$('higher').addEventListener('click', () => guess(true));
+$('lower').addEventListener('click', () => guess(false));
+$('restart').addEventListener('click', start);
+init();
+</script>
+</body>
+</html>
